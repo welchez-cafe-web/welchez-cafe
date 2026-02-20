@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura - Welchez Café</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    h1 { text-align: left; color: #4a2c2a; font-size: 28px; font-weight: bold; }
+    h2 { font-size: 22px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
+    th, td { border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; }
+    th { background-color: #f2f2f2; }
+    .resumen { margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; }
+    .resumen p { margin: 10px 0; }
+    input {
+      width: 100%;
+      border: none;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      background: transparent;
+    }
+    button { margin-top: 10px; padding: 10px 20px; background: #4a2c2a; color: #fff; border: none; cursor: pointer; font-size: 16px; font-weight: bold; }
+    #fecha { font-size: 18px; font-weight: bold; margin-top: 10px; }
+    #efectivo { width: 120px; }
+  </style>
+</head>
+<body>
+  <h1>Welchez Café</h1>
+  <h2>Factura - Compras en la Central de Abastos</h2>
+  <p id="fecha"></p>
+
+  <table id="factura">
+    <thead>
+      <tr>
+        <th>CANT.</th>
+        <th>DESCRIPCIÓN</th>
+        <th>PRECIO/UNIT</th>
+        <th>TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 12 filas vacías -->
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <div class="resumen">
+    <p><strong>Total Gasto:</strong> <span id="totalGasto">0</span></p>
+    <p><strong>Efectivo:</strong> <input type="number" id="efectivo" value="0"></p>
+    <p><strong>Cambio:</strong> <span id="cambio">0</span></p>
+  </div>
+
+  <button onclick="calcularTotales()">Calcular Totales</button>
+  <button onclick="generarPDF()">Exportar a PDF</button>
+  <button onclick="generarImagen()">Exportar a JPG</button>
+  <button onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
+
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    // Mostrar fecha actual
+    document.getElementById("fecha").innerText = "Fecha: " + new Date().toLocaleDateString();
+
+    function calcularTotales() {
+      let filas = document.querySelectorAll("#factura tbody tr");
+      let total = 0;
+      filas.forEach(fila => {
+        let cant = parseFloat(fila.cells[0].querySelector("input").value) || 0;
+        let precio = parseFloat(fila.cells[2].querySelector("input").value) || 0;
+        let subtotal = cant * precio;
+        fila.cells[3].innerText = subtotal.toFixed(2);
+        total += subtotal;
+      });
+      document.getElementById("totalGasto").innerText = total.toFixed(2);
+      let efectivo = parseFloat(document.getElementById("efectivo").value) || 0;
+      let cambio = efectivo - total;
+      document.getElementById("cambio").innerText = cambio.toFixed(2);
+    }
+
+    function generarPDF() {
+      const element = document.body;
+      html2pdf().from(element).save("Factura_WelchezCafe.pdf");
+    }
+
+    function generarImagen() {
+      html2canvas(document.body).then(canvas => {
+        let link = document.createElement("a");
+        link.download = "Factura_WelchezCafe.jpg";
+        link.href = canvas.toDataURL("image/jpeg");
+        link.click();
+      });
+    }
+
+    function enviarWhatsApp() {
+      calcularTotales(); // aseguramos que esté actualizado
+      let total = document.getElementById("totalGasto").innerText;
+      let efectivo = document.getElementById("efectivo").value;
+      let cambio = document.getElementById("cambio").innerText;
+      let fecha = document.getElementById("fecha").innerText;
+      let mensaje = `${fecha}\nFactura Welchez Café\nTotal: ${total}\nEfectivo: ${efectivo}\nCambio: ${cambio}`;
+      let url = "https://wa.me/?text=" + encodeURIComponent(mensaje);
+      window.open(url, "_blank");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Welchez - Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --blue: #004a7c; --light: #e6f2ff; --green: #25D366; }
+        body { font-family: 'Segoe UI', Tahoma, Helvetica, Arial, sans-serif; background: #333; padding: 10px; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        #pedido-captura { 
+            width: 450px; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 2px;
+        }
+        
+        header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid var(--blue); padding-bottom: 10px; margin-bottom: 20px; }
+        .title-box h1 { color: var(--blue); margin: 0; font-size: 22px; font-weight: 800; }
+        .date { color: #555; font-size: 13px; font-weight: bold; margin-top: 5px; }
+        .logo { text-align: right; line-height: 1; }
+        .logo-main { color: var(--blue); font-size: 26px; font-weight: bold; font-style: italic; }
+        
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { background: var(--blue); color: white; padding: 12px 8px; font-size: 13px; border: 1px solid var(--blue); text-transform: uppercase; }
+        td { padding: 10px 8px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; color: #111; vertical-align: middle; }
+        tr:nth-child(even) { background: var(--light); }
+
+        /* Columnas */
+        .c-desc { width: 60%; }
+        .c-um { width: 20%; text-align: center; }
+        .c-exist { width: 20%; text-align: center; }
+
+        /* Estilo del input para que sea cómodo escribir */
+        input { 
+            width: 90%; 
+            padding: 5px 0;
+            border: 1px solid #bbb; 
+            text-align: center; 
+            font-size: 14px; 
+            font-weight: bold; 
+            border-radius: 4px;
+        }
+
+        /* Contenedor del número final (reemplaza al input en la foto) */
+        .val-display { display: none; font-size: 14px; font-weight: bold; text-align: center; width: 100%; }
+
+        /* Modo Captura: Oculta el input y muestra el texto plano */
+        .modo-captura input { display: none; }
+        .modo-captura .val-display { display: block; }
+
+        .controles { width: 450px; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 18px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; font-size: 16px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-wa { background: var(--green); }
+        .btn-reset { background: #666; font-size: 12px; padding: 10px; margin-top: 15px; }
+        button:active { transform: scale(0.97); }
+    </style>
+</head>
+<body>
+
+<div id="pedido-captura">
+    <header>
+        <div class="title-box">
+            <h1>PEDIDO A DINITAS</h1>
+            <div id="fecha" class="date"></div>
+        </div>
+        <div class="logo">
+            <span class="logo-main">Welchez</span><br>
+            <span style="font-size: 11px; font-weight: bold; color: var(--blue); letter-spacing: 2px;">CAFÉ</span>
+        </div>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="c-desc">Descripción</th>
+                <th class="c-um">U/M</th>
+                <th class="c-exist">Existencia</th>
+            </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+    </table>
+</div>
+
+<div class="controles">
+    <button class="btn-wa" onclick="compartir()">📸 ENVIAR PEDIDO POR WHATSAPP</button>
+    <button class="btn-reset" onclick="location.reload()">Limpiar Formulario</button>
+</div>
+
+<script>
+    const data = [
+        ["PAPEL FILM REZINITE", "UNIDAD"], ["MAYONESSA HELLMANS GALON", "GALON"],
+        ["KETCHUP HELLMANS", "UNIDAD"], ["CONSOME DE POLLO MAGGI", "BOTE"],
+        ["GALLETA OREO", "GRAMOS"], ["NUTELLA", "GRAMOS"],
+        ["ACEITE VEGETAL 35 LBS. MARINA", "GALON"], ["ACEITE POMACE LATA 3.75LTS", "GALON"],
+        ["ACEITE OLIVA DON LAZARO", "BOTE"], ["CHILE JALAPEÑO NACHO SUPREME", "LITRO"],
+        ["SALSA RANCH", "UNIDAD"], ["LECHE CONDENSADA NESTLE", "UNIDAD"],
+        ["LECHE EVAPORADA IDEAL NESTLE", "GRAMOS"], ["PAPEL ALUMINIO GRANDE 1000X 12", "UNIDAD"],
+        ["SAL LA TORTUGA", "LIBRA"], ["SAL REFINADA", "UNIDAD"],
+        ["MOSTAZA DIJON DON LAZARO 350 GRS", "BOTE"], ["PAPEL ENCERADO", "UNIDAD"]
+    ];
+
+    document.getElementById('fecha').innerText = "FECHA: " + new Date().toLocaleDateString();
+
+    const lista = document.getElementById("lista");
+    data.forEach((p, i) => {
+        lista.innerHTML += `
+            <tr>
+                <td>${p[0]}</td>
+                <td class="c-um">${p[1]}</td>
+                <td class="c-exist">
+                    <input type="number" id="in-${i}" value="0" oninput="updateVal(${i})">
+                    <div id="disp-${i}" class="val-display">0</div>
+                </td>
+            </tr>`;
+    });
+
+    function updateVal(i) {
+        document.getElementById(`disp-${i}`).innerText = document.getElementById(`in-${i}`).value;
+    }
+
+    async function compartir() {
+        const area = document.getElementById('pedido-captura');
+        
+        // Sincronizar los textos antes de la captura
+        data.forEach((_, i) => updateVal(i));
+        
+        area.classList.add('modo-captura');
+
+        const canvas = await html2canvas(area, { 
+            scale: 3, 
+            backgroundColor: "#ffffff",
+            logging: false
+        });
+
+        area.classList.remove('modo-captura');
+
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], 'pedido.png', { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: 'Pedido Welchez' });
+            } else {
+                const link = document.createElement('a');
+                link.download = 'Pedido_Welchez.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                alert("Imagen descargada. Adjúntala en WhatsApp.");
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

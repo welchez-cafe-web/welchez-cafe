@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>FORMULARIO DE TRASLADO DE EQUIPO - WELCHEZ CAFE (LANDSCAPE CENTRADO)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --a4-landscape-px:1122px; /* aproximado para A4 landscape */
+    }
+
+    /* Página y centrado */
+    body {
+      font-family: Arial, sans-serif;
+      background:#f4f6f8;
+      padding:20px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .page {
+      width: var(--a4-landscape-px);
+      background:#fff;
+      padding:18px 22px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      box-sizing:border-box;
+      color:#222;
+    }
+
+    h1 {
+      text-align:center;
+      margin:6px 0 12px 0;
+      font-size:16px;
+    }
+
+    .header-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:8px; }
+    .header-row > div { min-width:160px; }
+    label { font-size:12px; color:#333; display:block; margin-bottom:4px; }
+    input[type="text"], input[type="date"], select {
+      width:100%; border: none; border-bottom:1px solid #cfcfcf; padding:6px 4px; font-size:13px;
+      background:transparent; box-sizing:border-box;
+    }
+
+    table { width:100%; border-collapse:collapse; margin-top:12px; table-layout:fixed; }
+    thead th { text-align:left; font-weight:700; padding:6px 8px; font-size:12px; color:#111; }
+    td, th { padding:6px 8px; vertical-align:middle; border:none; word-wrap:break-word; }
+    /* Todas las columnas con la misma anchura */
+    thead th, tbody td { width:16.66%; }
+
+    input.table-field, select.table-field {
+      width:100%; border:none; border-bottom:1px solid #e0e0e0; padding:6px 4px; font-size:13px;
+      background:transparent; box-sizing:border-box;
+    }
+
+    .section-title { font-weight:700; margin-top:16px; margin-bottom:6px; font-size:13px; }
+    .signatures { display:flex; gap:12px; margin-top:18px; }
+    .signature { flex:1; text-align:center; }
+    .signature input { width:90%; border:none; border-bottom:1px solid #bbb; padding:8px 4px; }
+
+    .buttons { text-align:center; margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    button { padding:10px 14px; font-size:13px; cursor:pointer; border-radius:4px; border:1px solid #2b6cb0; background:#2b6cb0; color:#fff; }
+    button.secondary { background:#fff; color:#2b6cb0; border:1px solid #2b6cb0; }
+
+    /* Forzar A4 landscape al imprimir */
+    @page { size: A4 landscape; margin: 10mm; }
+    @media print {
+      body { background: #fff; padding:0; }
+      .page { box-shadow:none; margin:0 auto; }
+      .no-print { display:none; }
+      input, select { border:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page" id="pageContent">
+
+    <h1>WELCHEZ CAFE - FORMULARIO DE TRASLADO DE EQUIPO ENTRE SUCURSALES</h1>
+
+    <!-- Encabezado -->
+    <div class="header-row">
+      <div>
+        <label for="num_traslado">Asunto / Nº traslado</label>
+        <input type="text" id="num_traslado" name="num_traslado" />
+      </div>
+      <div>
+        <label for="fecha">Fecha</label>
+        <input type="date" id="fecha" name="fecha" />
+      </div>
+      <div>
+        <label for="motivo">Motivo</label>
+        <select id="motivo" name="motivo">
+          <option value="permanente">Permanente</option>
+          <option value="temporal">Temporal</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Origen y destino -->
+    <div class="section-title">Origen y Destino</div>
+    <table>
+      <tr>
+        <td style="width:16.66%"><strong>Sucursal de salida</strong></td>
+        <td style="width:16.66%"><input class="table-field" type="text" name="sucursal_salida" /></td>
+        <td style="width:16.66%"><strong>Responsable salida</strong></td>
+        <td style="width:16.66%"><input class="table-field" type="text" name="responsable_salida" /></td>
+        <td style="width:16.66%"><strong>Sucursal de llegada</strong></td>
+        <td style="width:16.66%"><input class="table-field" type="text" name="sucursal_llegada" /></td>
+      </tr>
+      <tr>
+        <td><strong>Responsable llegada</strong></td>
+        <td><input class="table-field" type="text" name="responsable_llegada" /></td>
+        <td colspan="4"></td>
+      </tr>
+    </table>
+
+    <!-- Detalle del equipo -->
+    <div class="section-title">Detalle del Equipo</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th>Código Activo/Placa</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Número de Serie</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 10 filas -->
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion1" /></td>
+          <td><input class="table-field" type="text" name="codigo1" /></td>
+          <td><input class="table-field" type="text" name="marca1" /></td>
+          <td><input class="table-field" type="text" name="modelo1" /></td>
+          <td><input class="table-field" type="text" name="serie1" /></td>
+          <td><select class="table-field" name="estado1"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion2" /></td>
+          <td><input class="table-field" type="text" name="codigo2" /></td>
+          <td><input class="table-field" type="text" name="marca2" /></td>
+          <td><input class="table-field" type="text" name="modelo2" /></td>
+          <td><input class="table-field" type="text" name="serie2" /></td>
+          <td><select class="table-field" name="estado2"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion3" /></td>
+          <td><input class="table-field" type="text" name="codigo3" /></td>
+          <td><input class="table-field" type="text" name="marca3" /></td>
+          <td><input class="table-field" type="text" name="modelo3" /></td>
+          <td><input class="table-field" type="text" name="serie3" /></td>
+          <td><select class="table-field" name="estado3"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion4" /></td>
+          <td><input class="table-field" type="text" name="codigo4" /></td>
+          <td><input class="table-field" type="text" name="marca4" /></td>
+          <td><input class="table-field" type="text" name="modelo4" /></td>
+          <td><input class="table-field" type="text" name="serie4" /></td>
+          <td><select class="table-field" name="estado4"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion5" /></td>
+          <td><input class="table-field" type="text" name="codigo5" /></td>
+          <td><input class="table-field" type="text" name="marca5" /></td>
+          <td><input class="table-field" type="text" name="modelo5" /></td>
+          <td><input class="table-field" type="text" name="serie5" /></td>
+          <td><select class="table-field" name="estado5"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion6" /></td>
+          <td><input class="table-field" type="text" name="codigo6" /></td>
+          <td><input class="table-field" type="text" name="marca6" /></td>
+          <td><input class="table-field" type="text" name="modelo6" /></td>
+          <td><input class="table-field" type="text" name="serie6" /></td>
+          <td><select class="table-field" name="estado6"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion7" /></td>
+          <td><input class="table-field" type="text" name="codigo7" /></td>
+          <td><input class="table-field" type="text" name="marca7" /></td>
+          <td><input class="table-field" type="text" name="modelo7" /></td>
+          <td><input class="table-field" type="text" name="serie7" /></td>
+          <td><select class="table-field" name="estado7"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion8" /></td>
+          <td><input class="table-field" type="text" name="codigo8" /></td>
+          <td><input class="table-field" type="text" name="marca8" /></td>
+          <td><input class="table-field" type="text" name="modelo8" /></td>
+          <td><input class="table-field" type="text" name="serie8" /></td>
+          <td><select class="table-field" name="estado8"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion9" /></td>
+          <td><input class="table-field" type="text" name="codigo9" /></td>
+          <td><input class="table-field" type="text" name="marca9" /></td>
+          <td><input class="table-field" type="text" name="modelo9" /></td>
+          <td><input class="table-field" type="text" name="serie9" /></td>
+          <td><select class="table-field" name="estado9"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+        <tr>
+          <td><input class="table-field" type="text" name="descripcion10" /></td>
+          <td><input class="table-field" type="text" name="codigo10" /></td>
+          <td><input class="table-field" type="text" name="marca10" /></td>
+          <td><input class="table-field" type="text" name="modelo10" /></td>
+          <td><input class="table-field" type="text" name="serie10" /></td>
+          <td><select class="table-field" name="estado10"><option>Nuevo</option><option>Usado</option><option>Regular</option><option>Malo</option></select></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Firmas -->
+    <div class="section-title">Nombres de Responsables / Firmas</div>
+    <div class="signatures">
+      <div class="signature">
+        <div><strong>Entrega</strong></div>
+        <input type="text" name="firma_entrega" placeholder="Nombre y firma" />
+      </div>
+      <div class="signature">
+        <div><strong>Transporta</strong></div>
+        <input type="text" name="firma_transporta" placeholder="Nombre y firma" />
+      </div>
+      <div class="signature">
+        <div><strong>Recibe</strong></div>
+        <input type="text" name="firma_recibe" placeholder="Nombre y firma" />
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="buttons no-print" style="margin-bottom:8px;">
+      <button id="btnPdf">Exportar a PDF (Horizontal, centrado)</button>
+      <button id="btnJpg" class="secondary">Exportar a JPG</button>
+      <button id="btnWhats" class="secondary">Enviar por WhatsApp (texto)</button>
+    </div>
+
+  </div>
+
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    // Fecha automática
+    (function setFecha(){ const f = document.getElementById('fecha'); if(f) f.valueAsDate = new Date(); })();
+
+    // Captura de alta calidad del contenedor
+    async function capturePage() {
+      const element = document.getElementById('pageContent');
+      // scale 2 para buena resolución; background blanco para PDF/JPG
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+      return canvas;
+    }
+
+    // Exportar a PDF en A4 landscape centrado
+    document.getElementById('btnPdf').addEventListener('click', async function () {
+      try {
+        const { jsPDF } = window.jspdf;
+        const canvas = await capturePage();
+        const imgData = canvas.toDataURL('image/png');
+
+        // PDF landscape A4
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();   // ~297 mm
+        const pageHeight = pdf.internal.pageSize.getHeight(); // ~210 mm
+
+        // Márgenes en mm
+        const marginMM = 10;
+        const usableWidth = pageWidth - marginMM * 2;
+        const usableHeight = pageHeight - marginMM * 2;
+
+        // Propiedades de la imagen
+        const imgProps = pdf.getImageProperties(imgData);
+        // Calcular tamaño manteniendo proporción
+        let imgWidthMM = usableWidth;
+        let imgHeightMM = (imgProps.height * imgWidthMM) / imgProps.width;
+
+        if (imgHeightMM > usableHeight) {
+          imgHeightMM = usableHeight;
+          imgWidthMM = (imgProps.width * imgHeightMM) / imgProps.height;
+        }
+
+        // Offsets para centrar
+        const leftOffset = (pageWidth - imgWidthMM) / 2;
+        const topOffset = (pageHeight - imgHeightMM) / 2;
+
+        // Si cabe en una página
+        if (imgHeightMM <= usableHeight) {
+          pdf.addImage(imgData, 'PNG', leftOffset, topOffset, imgWidthMM, imgHeightMM);
+          pdf.save('traslado_equipo_landscape.pdf');
+          return;
+        }
+
+        // Si no cabe (muy alto), paginar por slices y centrar cada slice
+        const pxPerMM = canvas.width / imgWidthMM;
+        const sliceHeightPx = Math.floor(usableHeight * pxPerMM);
+        let y = 0;
+        let pageIndex = 0;
+        while (y < canvas.height) {
+          const slice = document.createElement('canvas');
+          slice.width = canvas.width;
+          slice.height = Math.min(sliceHeightPx, canvas.height - y);
+          const ctx = slice.getContext('2d');
+          ctx.drawImage(canvas, 0, y, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+          const sliceData = slice.toDataURL('image/png');
+
+          const sliceHeightMM = slice.height / pxPerMM;
+          const sliceLeftOffset = (pageWidth - imgWidthMM) / 2;
+          const sliceTopOffset = (pageHeight - sliceHeightMM) / 2;
+
+          if (pageIndex > 0) pdf.addPage();
+          pdf.addImage(sliceData, 'PNG', sliceLeftOffset, sliceTopOffset, imgWidthMM, sliceHeightMM);
+
+          y += slice.height;
+          pageIndex++;
+        }
+
+        pdf.save('traslado_equipo_landscape.pdf');
+      } catch (err) {
+        console.error(err);
+        alert('Error al generar PDF: ' + (err.message || err));
+      }
+    });
+
+    // Exportar a JPG (captura centrada)
+    document.getElementById('btnJpg').addEventListener('click', async function () {
+      try {
+        const canvas = await capturePage();
+        const jpgData = canvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.href = jpgData;
+        link.download = 'traslado_equipo_landscape.jpg';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (err) {
+        console.error(err);
+        alert('Error al generar JPG: ' + (err.message || err));
+      }
+    });
+
+    // Enviar por WhatsApp (texto resumen)
+    document.getElementById('btnWhats').addEventListener('click', function () {
+      try {
+        const asunto = document.getElementById('num_traslado')?.value || '';
+        const salida = document.querySelector('input[name="sucursal_salida"]')?.value || '';
+        const llegada = document.querySelector('input[name="sucursal_llegada"]')?.value || '';
+        const fecha = document.getElementById('fecha')?.value || '';
+        const responsableSalida = document.querySelector('input[name="responsable_salida"]')?.value || '';
+        const responsableLlegada = document.querySelector('input[name="responsable_llegada"]')?.value || '';
+
+        let mensaje = `Traslado WELCHEZ CAFE\nAsunto: ${asunto}\nFecha: ${fecha}\nSalida: ${salida} (Resp: ${responsableSalida})\nLlegada: ${llegada} (Resp: ${responsableLlegada})\n\nDetalle:`;
+
+        for (let i = 1; i <= 10; i++) {
+          const desc = document.querySelector(`input[name="descripcion${i}"]`)?.value || '';
+          const cod = document.querySelector(`input[name="codigo${i}"]`)?.value || '';
+          if (desc || cod) mensaje += `\n- ${desc}${cod ? ' | ' + cod : ''}`;
+        }
+
+        mensaje += `\n\nFirmas: Entrega: ${document.querySelector('input[name="firma_entrega"]')?.value || ''} | Transporta: ${document.querySelector('input[name="firma_transporta"]')?.value || ''} | Recibe: ${document.querySelector('input[name="firma_recibe"]')?.value || ''}`;
+
+        const encoded = encodeURIComponent(mensaje);
+        const url = `https://wa.me/?text=${encoded}`;
+        window.open(url, '_blank');
+      } catch (err) {
+        console.error(err);
+        alert('Error al preparar mensaje de WhatsApp: ' + (err.message || err));
+      }
+    });
+  </script>
+</body>
+</html>
