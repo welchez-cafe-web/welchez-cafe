@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Panadería - Welchez Café</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4a342e;
+            --accent-color: #d4a373;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .ficha-container {
+            background: white;
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 25px;
+            border: 2px solid var(--primary-color);
+            box-sizing: border-box;
+        }
+
+        .top-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+
+        .fecha-caja {
+            font-weight: bold;
+            color: var(--primary-color);
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            font-size: 13px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 3px double var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        h1 { margin: 0; font-size: 24px; color: var(--primary-color); }
+        h2 { margin: 5px 0; font-size: 15px; color: #555; }
+        h4 { margin: 10px 0; color: var(--accent-color); font-size: 18px; text-transform: uppercase; border-bottom: 1px solid #eee; }
+
+        .grid-campos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group { margin-bottom: 12px; }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #aaa;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Estilo especial para Peso + Check */
+        .peso-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .check-100 {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            background: #fdf8f3;
+            padding: 5px;
+            border: 1px solid var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .seccion-final {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+
+        .btn-pdf { background-color: #c0392b; }
+        .btn-jpg { background-color: #2980b9; }
+        .btn-email { background-color: #34495e; }
+        .btn-whatsapp { background-color: #27ae60; }
+
+        @media (max-width: 600px) {
+            .grid-campos, .seccion-final { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ficha-container" id="ficha-panaderia">
+    
+    <div class="top-row">
+        <div class="fecha-caja">
+            FECHA: <span id="fechaActual"></span>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>- WELCHEZ CAFÉ -</h1>
+        <h2>FICHA DE PROCESO PARA EL ÁREA DE PANADERÍA</h2>
+        <h4>MASAS Y MEZCLAS DE PANES</h4>
+    </div>
+
+    <div class="form-group">
+        <label>NOMBRE DE LA RECETA:</label>
+        <input type="text" id="receta" placeholder="Ej. Pan de Masa Madre / Brioche">
+    </div>
+
+    <div class="grid-campos">
+        <div class="form-group">
+            <label>PESO TOTAL:</label>
+            <div class="peso-container">
+                <input type="text" id="peso" placeholder="Ej. 50 kg">
+                <div class="check-100">
+                    <input type="checkbox" id="check100"> <label for="check100" style="display:inline; margin:0;">100% INGREDIENTES</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>AMASADO (LENTO + RÁPIDO):</label>
+            <input type="text" id="amasado" placeholder="8 min lento + 4 min rápido">
+        </div>
+
+        <div class="form-group">
+            <label>TEMPERATURA DE MASA (°C):</label>
+            <input type="text" id="tempMasa" placeholder="Ej. 26°C">
+        </div>
+
+        <div class="form-group">
+            <label>FERMENTACIÓN INICIAL (TIEMPO Y TEMP):</label>
+            <input type="text" id="fermInicial" placeholder="45 min a 28°C">
+        </div>
+
+        <div class="form-group">
+            <label>FERMENTACIÓN FINAL (TIEMPO):</label>
+            <input type="text" id="fermFinal" placeholder="Ej. 35 minutos">
+        </div>
+
+        <div class="form-group">
+            <label>FORMADO (PESO POR PIEZA):</label>
+            <input type="text" id="formado" placeholder="Ej. 60 gramos">
+        </div>
+
+        <div class="form-group">
+            <label>TEMPERATURA DE HORNEADO:</label>
+            <input type="text" id="tempHorno" placeholder="Ej. 180°C">
+        </div>
+
+        <div class="form-group">
+            <label>TIEMPO DE HORNEADO:</label>
+            <input type="text" id="tiempoHorno" placeholder="Ej. 15-20 min">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>TIEMPO DE CONGELACIÓN O ENFRIADO:</label>
+        <input type="text" id="enfriado" placeholder="Ej. 2 horas">
+    </div>
+
+    <h4>RESULTADO FINAL (CONTROL DE CALIDAD)</h4>
+    <div class="seccion-final">
+        <div class="form-group">
+            <label>PESO FINAL:</label>
+            <input type="text" id="pesoFinal">
+        </div>
+        <div class="form-group">
+            <label>COLOR:</label>
+            <input type="text" id="colorFinal">
+        </div>
+        <div class="form-group">
+            <label>FORMA:</label>
+            <input type="text" id="formaFinal">
+        </div>
+        <div class="form-group">
+            <label>TEXTURA:</label>
+            <input type="text" id="texturaFinal">
+        </div>
+    </div>
+
+    <div class="button-grid" id="panel-botones">
+        <button class="btn-pdf" onclick="descargarPDF()">Guardar PDF</button>
+        <button class="btn-jpg" onclick="descargarJPG()">Guardar Imagen</button>
+        <button class="btn-email" onclick="enviarEmail()">Enviar Correo</button>
+        <button class="btn-whatsapp" onclick="enviarWA()">WhatsApp</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('fechaActual').innerText = new Date().toLocaleDateString();
+
+    function obtenerNombre() {
+        return document.getElementById('receta').value || "Ficha_Panaderia";
+    }
+
+    function descargarPDF() {
+        const elemento = document.getElementById('ficha-panaderia');
+        const botones = document.getElementById('panel-botones');
+        botones.style.visibility = 'hidden';
+
+        const opt = {
+            margin: 5,
+            filename: `${obtenerNombre()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 3 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(elemento).save().then(() => {
+            botones.style.visibility = 'visible';
+        });
+    }
+
+    function descargarJPG() {
+        const elemento = document.getElementById('ficha-panaderia');
+        const botones = document.getElementById('panel-botones');
+        botones.style.visibility = 'hidden';
+
+        html2canvas(elemento, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${obtenerNombre()}.jpg`;
+            link.href = canvas.toDataURL("image/jpeg");
+            link.click();
+            botones.style.visibility = 'visible';
+        });
+    }
+
+    function enviarEmail() {
+        const receta = obtenerNombre();
+        window.location.href = `mailto:?subject=Ficha Panadería: ${receta}&body=Se adjunta reporte de masa.`;
+    }
+
+    function enviarWA() {
+        const receta = obtenerNombre();
+        const msg = encodeURIComponent(`*WELCHEZ CAFÉ - PANADERÍA*\n*Receta:* ${receta}\n*Estado:* Proceso Completado.`);
+        window.open(`https://wa.me/?text=${msg}`);
+    }
+</script>
+
+</body>
+</html>
