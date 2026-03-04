@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>WELCHEZ CAFÉ - Entrega de Materiales</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; min-height: 100vh; }
+        .contenedor { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #formulario { border: 1px solid #ccc; padding: 20px; width: 750px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; font-weight: bold; margin-top: 0; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select, textarea { padding: 8px; margin-top: 5px; box-sizing: border-box; width: 100%; font-size: 14px; font-weight: bold; border: 1px solid #000; }
+        table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+        table, th, td { border: 1px solid #aaa; }
+        th, td { padding: 8px; text-align: center; font-weight: bold; }
+        .col-cantidad { width: 90px; }
+        .col-material { width: 450px; }
+        .col-unidad { width: 150px; }
+        select { width: 100%; text-align: center; }
+        button { margin-top: 15px; padding: 10px 15px; background-color: #007BFF; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .acciones { margin-top: 20px; text-align: center; width: 100%; }
+        .acciones button { margin: 5px; padding: 10px 15px; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 5px; }
+        .btn-img { background-color: #28a745; }
+        .btn-pdf { background-color: #dc3545; }
+        .btn-ws { background-color: #25D366; }
+        @media print { .acciones, button[type="button"] { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <div id="formulario">
+        <h2>WELCHEZ CAFÉ - Formulario de Entrega de Materiales</h2>
+        <form id="miFormulario">
+            <label for="area">Área Solicitante:</label>
+            <input type="text" id="area" name="area">
+
+            <label for="responsable">Nombre del Responsable:</label>
+            <input type="text" id="responsable" name="responsable">
+
+            <label for="fecha">Fecha de Entrega:</label>
+            <input type="date" id="fecha" name="fecha">
+
+            <h3>Lista de Materiales</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-cantidad">Cantidad</th>
+                        <th class="col-material">Material</th>
+                        <th class="col-unidad">Unidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                    <tr><td><input type="number"></td><td><input type="text"></td><td><select><option></option><option>KG</option><option>libras</option><option>gramos</option><option>litro</option><option>pieza</option><option>unidad</option><option>onzas</option></select></td></tr>
+                </tbody>
+            </table>
+
+            <label for="observaciones">Observaciones:</label>
+            <textarea id="observaciones" rows="3"></textarea>
+
+            <label for="firma">Firma de Recibido:</label>
+            <input type="text" id="firma" placeholder="Escriba nombre para firma">
+            
+            <button type="button" style="width:100%; background-color:#6c757d;">Registrar Entrega</button>
+        </form>
+    </div>
+
+    <div class="acciones">
+        <button class="btn-img" onclick="descargarImagen()">📷 Descargar Imagen</button>
+        <button class="btn-pdf" onclick="descargarPDF()">📄 Descargar PDF</button>
+        <button class="btn-ws" onclick="enviarWhatsApp()">📲 Enviar por WhatsApp</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    function toggleBotones(mostrar) {
+        const display = mostrar ? "block" : "none";
+        document.querySelector(".acciones").style.display = display;
+        document.querySelector("button[type='button']").style.display = display;
+    }
+
+    async function descargarImagen() {
+        toggleBotones(false);
+        const canvas = await html2canvas(document.querySelector("#formulario"), { scale: 2 });
+        const link = document.createElement("a");
+        link.download = "entrega_materiales.jpg";
+        link.href = canvas.toDataURL("image/jpeg", 0.9);
+        link.click();
+        toggleBotones(true);
+    }
+
+    async function descargarPDF() {
+        toggleBotones(false);
+        const { jsPDF } = window.jspdf;
+        const canvas = await html2canvas(document.querySelector("#formulario"), { scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgWidth = pdfWidth - 20; 
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+        pdf.save("entrega_materiales.pdf");
+        toggleBotones(true);
+    }
+
+    function enviarWhatsApp() {
+        const area = document.getElementById("area").value;
+        const resp = document.getElementById("responsable").value;
+        const fecha = document.getElementById("fecha").value;
+        const msg = `*WELCHEZ CAFÉ*%0A*Entrega de Materiales*%0A--------------------------%0A*Área:* ${area}%0A*Responsable:* ${resp}%0A*Fecha:* ${fecha}`;
+        window.open(`https://wa.me/?text=${msg}`, "_blank");
+    }
+</script>
+</body>
+</html>
