@@ -1,120 +1,438 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Factura - Welchez Café</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    h1 { text-align: left; color: #4a2c2a; font-size: 28px; font-weight: bold; }
-    h2 { font-size: 22px; font-weight: bold; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
-    th, td { border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; }
-    th { background-color: #f2f2f2; }
-    .resumen { margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; }
-    .resumen p { margin: 10px 0; }
-    input {
-      width: 100%;
-      border: none;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      background: transparent;
-    }
-    button { margin-top: 10px; padding: 10px 20px; background: #4a2c2a; color: #fff; border: none; cursor: pointer; font-size: 16px; font-weight: bold; }
-    #fecha { font-size: 18px; font-weight: bold; margin-top: 10px; }
-    #efectivo { width: 120px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compras en la Central de Abastos - Welchez Café (Final)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        header h2 {
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: right; /* Alineación por defecto a la derecha para números */
+        }
+
+        th {
+            background-color: #f2f2f2;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* Alineación a la izquierda para la columna de Descripción */
+        th.descripcion-col, td.descripcion-col {
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 90%;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            text-align: inherit;
+            padding: 2px;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus {
+            outline: 2px solid #007bff;
+            background-color: white;
+        }
+
+        /* Estilos para el pie de la tabla con bordes punteados */
+        .total-row td {
+            border-style: solid;
+        }
+
+        .total-row .dashed-cell {
+            border-style: dashed;
+            font-weight: bold;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+
+        .add-row-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .clear-data-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons button, .action-buttons a {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-jpg { background-color: #ffc107; color: black; }
+        .btn-pdf { background-color: #dc3545; }
+        .btn-whatsapp { background-color: #25d366; }
+        .btn-email { background-color: #007bff; }
+
+        @media print {
+            .table-controls, .action-buttons {
+                display: none;
+            }
+            .main-container {
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Welchez Café</h1>
-  <h2>Factura - Compras en la Central de Abastos</h2>
-  <p id="fecha"></p>
 
-  <table id="factura">
-    <thead>
-      <tr>
-        <th>CANT.</th>
-        <th>DESCRIPCIÓN</th>
-        <th>PRECIO/UNIT</th>
-        <th>TOTAL</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- 12 filas vacías -->
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-      <tr><td><input type="number"></td><td><input type="text"></td><td><input type="number"></td><td></td></tr>
-    </tbody>
-  </table>
+<div class="main-container" id="printable-area">
+    <header>
+        <h1>COMPRAS EN LA CENTRAL DE ABASTOS</h1>
+        <h2>-WELCHEZ CAFÉ-</h2>
+    </header>
 
-  <div class="resumen">
-    <p><strong>Total Gasto:</strong> <span id="totalGasto">0</span></p>
-    <p><strong>Efectivo:</strong> <input type="number" id="efectivo" value="0"></p>
-    <p><strong>Cambio:</strong> <span id="cambio">0</span></p>
-  </div>
+    <table id="purchase-table">
+        <thead>
+            <tr>
+                <th>CANT.</th>
+                <th class="descripcion-col">DESCRIPCION</th>
+                <th>PRECIO/UNIT</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
+        <tbody id="items-body">
+            <tr>
+                <td><input type="number" value="3" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="SANDIAS PEDREGAL"></td>
+                <td><input type="number" value="80" onchange="calculate()"></td>
+                <td class="row-total">240</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="3" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="SANDIAS LEC"></td>
+                <td><input type="number" value="80" onchange="calculate()"></td>
+                <td class="row-total">240</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="1" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PAPAYAS PEDREGAL"></td>
+                <td><input type="number" value="30" onchange="calculate()"></td>
+                <td class="row-total">30</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="2" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PAPAYAS LEC"></td>
+                <td><input type="number" value="30" onchange="calculate()"></td>
+                <td class="row-total">60</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="150" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PLATANOS RIO"></td>
+                <td><input type="number" value="7" onchange="calculate()"></td>
+                <td class="row-total">1050</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="50" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PLATANOS LEC"></td>
+                <td><input type="number" value="7" onchange="calculate()"></td>
+                <td class="row-total">350</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="150" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PLATANOS PEDREGAL"></td>
+                <td><input type="number" value="7" onchange="calculate()"></td>
+                <td class="row-total">1050</td>
+            </tr>
+            <tr>
+                <td><input type="number" value="8" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text" value="PIÑAS LEC"></td>
+                <td><input type="number" value="35" onchange="calculate()"></td>
+                <td class="row-total">280</td>
+            </tr>
+            <tr>
+                <td><input type="number" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text"></td>
+                <td><input type="number" onchange="calculate()"></td>
+                <td class="row-total">0</td>
+            </tr>
+            <tr>
+                <td><input type="number" onchange="calculate()"></td>
+                <td class="descripcion-col"><input type="text"></td>
+                <td><input type="number" onchange="calculate()"></td>
+                <td class="row-total">0</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2" style="border: none;">
+                    <div class="table-controls">
+                        <button class="add-row-btn" onclick="addNewRow()">+ Añadir Fila</button>
+                        <button class="clear-data-btn" onclick="clearData()">🧹 Limpiar Datos</button>
+                    </div>
+                </td>
+                <td class="dashed-cell uppercase">TOTAL GASTO</td>
+                <td class="dashed-cell" id="total-gasto">3300</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="2" style="border: none;"></td>
+                <td class="dashed-cell uppercase">EFECTIVO</td>
+                <td class="dashed-cell"><input type="number" value="3500" id="efectivo-input" onchange="calculate()"></td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="2" style="border: none;"></td>
+                <td class="dashed-cell uppercase">CAMBIO</td>
+                <td class="dashed-cell" id="cambio-total">200</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 
-  <button onclick="calcularTotales()">Calcular Totales</button>
-  <button onclick="generarPDF()">Exportar a PDF</button>
-  <button onclick="generarImagen()">Exportar a JPG</button>
-  <button onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
+<div class="action-buttons" id="action-buttons-container">
+    <button class="btn-jpg" onclick="downloadJPG()">📥 Descargar JPG</button>
+    <button class="btn-pdf" onclick="downloadPDF()">📥 Descargar PDF</button>
+    <button class="btn-whatsapp" onclick="shareWhatsApp()">💬 Enviar por WhatsApp</button>
+    <button class="btn-email" onclick="shareEmail()">📧 Enviar por Correo</button>
+</div>
 
-  <!-- Librerías -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    // Función principal de cálculo
+    function calculate() {
+        const rows = document.getElementById('items-body').getElementsByTagName('tr');
+        let totalGasto = 0;
 
-  <script>
-    // Mostrar fecha actual
-    document.getElementById("fecha").innerText = "Fecha: " + new Date().toLocaleDateString();
+        for (let row of rows) {
+            const cells = row.cells;
+            const cantInput = cells[0].getElementsByTagName('input')[0];
+            const precioInput = cells[2].getElementsByTagName('input')[0];
+            const totalCell = cells[3];
 
-    function calcularTotales() {
-      let filas = document.querySelectorAll("#factura tbody tr");
-      let total = 0;
-      filas.forEach(fila => {
-        let cant = parseFloat(fila.cells[0].querySelector("input").value) || 0;
-        let precio = parseFloat(fila.cells[2].querySelector("input").value) || 0;
-        let subtotal = cant * precio;
-        fila.cells[3].innerText = subtotal.toFixed(2);
-        total += subtotal;
-      });
-      document.getElementById("totalGasto").innerText = total.toFixed(2);
-      let efectivo = parseFloat(document.getElementById("efectivo").value) || 0;
-      let cambio = efectivo - total;
-      document.getElementById("cambio").innerText = cambio.toFixed(2);
+            const cant = parseFloat(cantInput.value) || 0;
+            const precio = parseFloat(precioInput.value) || 0;
+            const rowTotal = cant * precio;
+
+            totalCell.innerText = rowTotal;
+            totalGasto += rowTotal;
+        }
+
+        document.getElementById('total-gasto').innerText = totalGasto;
+
+        const efectivo = parseFloat(document.getElementById('efectivo-input').value) || 0;
+        const cambio = efectivo - totalGasto;
+        document.getElementById('cambio-total').innerText = cambio;
     }
 
-    function generarPDF() {
-      const element = document.body;
-      html2pdf().from(element).save("Factura_WelchezCafe.pdf");
+    // Añadir nueva fila
+    function addNewRow() {
+        const tbody = document.getElementById('items-body');
+        const newRow = tbody.rows[0].cloneNode(true);
+        
+        // Limpiar inputs de la nueva fila
+        const inputs = newRow.getElementsByTagName('input');
+        inputs[0].value = ''; // Cant
+        inputs[1].value = ''; // Desc
+        inputs[2].value = ''; // Precio
+        newRow.getElementsByClassName('row-total')[0].innerText = '0';
+        
+        tbody.appendChild(newRow);
+        // Volver a calcular para asegurar listeners
+        calculate();
     }
 
-    function generarImagen() {
-      html2canvas(document.body).then(canvas => {
-        let link = document.createElement("a");
-        link.download = "Factura_WelchezCafe.jpg";
-        link.href = canvas.toDataURL("image/jpeg");
-        link.click();
-      });
+    // Limpiar todos los datos ingresados
+    function clearData() {
+        const tbody = document.getElementById('items-body');
+        // Eliminar todas las filas adicionales
+        while (tbody.rows.length > 2) {
+            tbody.deleteRow(tbody.rows.length - 1);
+        }
+
+        // Limpiar inputs de las filas base
+        const inputsInBody = tbody.getElementsByTagName('input');
+        for (let input of inputsInBody) {
+            input.value = '';
+        }
+
+        // Reiniciar totales de fila
+        const rowTotals = tbody.getElementsByClassName('row-total');
+        for (let totalCell of rowTotals) {
+            totalCell.innerText = '0';
+        }
+
+        // Limpiar inputs de efectivo y totales del pie
+        document.getElementById('efectivo-input').value = '';
+        document.getElementById('total-gasto').innerText = '0';
+        document.getElementById('cambio-total').innerText = '0';
     }
 
-    function enviarWhatsApp() {
-      calcularTotales(); // aseguramos que esté actualizado
-      let total = document.getElementById("totalGasto").innerText;
-      let efectivo = document.getElementById("efectivo").value;
-      let cambio = document.getElementById("cambio").innerText;
-      let fecha = document.getElementById("fecha").innerText;
-      let mensaje = `${fecha}\nFactura Welchez Café\nTotal: ${total}\nEfectivo: ${efectivo}\nCambio: ${cambio}`;
-      let url = "https://wa.me/?text=" + encodeURIComponent(mensaje);
-      window.open(url, "_blank");
+    // Ejecutar cálculo inicial
+    calculate();
+
+    // --- Funciones de Exportación (Actualizadas para ocultar botones) ---
+
+    // Descargar como JPG (Ocultando botones)
+    function downloadJPG() {
+        const printableArea = document.getElementById("printable-area");
+        const actionButtons = document.getElementById("action-buttons-container");
+
+        // Ocultar botones antes de capturar
+        actionButtons.style.display = 'none';
+
+        html2canvas(printableArea).then(canvas => {
+            let link = document.createElement('a');
+            link.download = 'compra-welchez.jpg';
+            link.href = canvas.toDataURL("image/jpeg");
+            link.click();
+
+            // Restaurar botones después de capturar
+            actionButtons.style.display = 'flex';
+        });
     }
-  </script>
+
+    // Descargar como PDF (Ocultando botones)
+    function downloadPDF() {
+        const element = document.getElementById('printable-area');
+        const actionButtons = document.getElementById("action-buttons-container");
+        
+        const opt = {
+            margin:       10,
+            filename:     'compra-welchez.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Ocultar botones antes de generar
+        actionButtons.style.display = 'none';
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Restaurar botones después de generar
+            actionButtons.style.display = 'flex';
+        });
+    }
+
+    // Compartir por WhatsApp (Como texto estructurado)
+    function shareWhatsApp() {
+        let text = "Resumen de Compra - Welchez Café\n\n";
+        text += "---------------------------------\n";
+        text += "CANT. | DESCRIPCION | TOTAL\n";
+        text += "---------------------------------\n";
+
+        const rows = document.getElementById('items-body').getElementsByTagName('tr');
+        for (let row of rows) {
+            const inputs = row.getElementsByTagName('input');
+            if (inputs[1].value) { // Solo añadir si hay descripción
+                const total = row.getElementsByClassName('row-total')[0].innerText;
+                text += `${inputs[0].value || 0} | ${inputs[1].value.padEnd(20)} | ${total}\n`;
+            }
+        }
+
+        text += "---------------------------------\n";
+        text += `TOTAL GASTO: ${document.getElementById('total-gasto').innerText}\n`;
+        text += `EFECTIVO:    ${document.getElementById('efectivo-input').value}\n`;
+        text += `CAMBIO:      ${document.getElementById('cambio-total').innerText}\n`;
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // Enviar por Correo (Como texto estructurado)
+    function shareEmail() {
+        let subject = "Compras en la Central de Abastos - Welchez Café";
+        let body = "Aquí está el resumen de la compra:\n\n";
+        
+        body += "CANT.\t| DESCRIPCION\t\t| TOTAL\n";
+        body += "-------------------------------------------------\n";
+
+        const rows = document.getElementById('items-body').getElementsByTagName('tr');
+        for (let row of rows) {
+            const inputs = row.getElementsByTagName('input');
+            if (inputs[1].value) {
+                const total = row.getElementsByClassName('row-total')[0].innerText;
+                body += `${inputs[0].value || 0}\t| ${inputs[1].value.padEnd(20)}\t| ${total}\n`;
+            }
+        }
+
+        body += "\nTOTAL GASTO: " + document.getElementById('total-gasto').innerText + "\n";
+        body += "EFECTIVO:    " + document.getElementById('efectivo-input').value + "\n";
+        body += "CAMBIO:      " + document.getElementById('cambio-total').innerText;
+
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+</script>
+
 </body>
 </html>
