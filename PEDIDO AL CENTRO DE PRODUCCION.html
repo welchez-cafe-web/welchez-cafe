@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welchez Café - Sistema de Pedidos Profesional v4</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #5d4037; --accent: #d1e9f6; --text: #333; }
+        body { font-family: 'Helvetica', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; color: var(--text); }
+        .container { max-width: 900px; margin: auto; background: white; padding: 40px; border: 1px solid #eee; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .header { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 20px; margin-bottom: 25px; }
+        .logo { font-size: 38px; font-weight: bold; color: var(--primary); letter-spacing: 4px; margin: 0; }
+        .subtitle { font-size: 18px; margin: 10px 0 0; color: #666; font-weight: bold; }
+        .no-print-zone { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; max-width: 900px; margin: 0 auto 20px; }
+        .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px; }
+        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: var(--primary); color: white; padding: 12px; text-align: center; font-size: 13px; }
+        td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 12px; }
+        td.text-left { text-align: left; padding-left: 15px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 12px; }
+        .btn-add { background: #27ae60; color: white; }
+        .btn-manage { background: #8e44ad; color: white; }
+        .btn-special { background: #f39c12; color: white; }
+        .btn-pdf { background: var(--primary); color: white; }
+        .btn-jpg { background: #2980b9; color: white; }
+        #inventory-modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:25px; box-shadow:0 0 50px rgba(0,0,0,0.5); z-index:1000; width:90%; max-width:500px; border-radius:8px; }
+        .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; }
+        @media print { .no-print-zone, .btn-remove, .action-btns, .overlay, #inventory-modal { display: none !important; } body { background: white; padding: 0; } .container { box-shadow: none; border: none; width: 100%; padding: 10px; } }
+    </style>
+</head>
+<body>
+
+<div class="no-print-zone">
+    <div class="control-grid">
+        <div>
+            <label>Sucursal</label>
+            <select id="suc-select">
+                <option value="Welchez Rio de Piedras">Welchez Rio de Piedras</option>
+                <option value="Welchez Pedregal">Welchez Pedregal</option>
+                <option value="Welchez La Entrada">Welchez La Entrada</option>
+                <option value="Welchez Aeropuerto">Welchez Aeropuerto</option>
+            </select>
+            <button onclick="addSucursal()" style="font-size: 10px; margin-top: 5px;">+ Nueva Sucursal</button>
+        </div>
+        <div>
+            <label>Departamento</label>
+            <select id="dep-select" onchange="updateItems()">
+                <option value="">-- Seleccionar --</option>
+                <option value="COCINA">COCINA</option>
+                <option value="PANADERIA">PANADERÍA</option>
+                <option value="REPOSTERIA">REPOSTERÍA</option>
+            </select>
+        </div>
+        <div>
+            <label>Producto</label>
+            <input list="prods" id="prod-in" placeholder="Buscar producto..." autocomplete="off">
+            <datalist id="prods"></datalist>
+        </div>
+        <button class="btn btn-add" onclick="addRow()">AGREGAR</button>
+        <button class="btn btn-manage" onclick="openInventory()">GESTIONAR LISTA</button>
+    </div>
+    
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button id="btn-toggle-special" class="btn btn-special" onclick="toggleSpecial()">★ ACTIVAR PEDIDO ESPECIAL</button>
+        <button class="btn" style="background: #7f8c8d; color:white;" onclick="window.location.reload()">REINICIAR FORMULARIO</button>
+    </div>
+
+    <div id="input-special-panel" style="display:none; margin-top: 20px; border: 2px solid #f39c12; padding: 15px; border-radius: 5px; background: #fffcf5;">
+        <h4 style="margin: 0 0 10px 0; color: #d35400;">Configuración de Pedido Especial</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="esp-cliente" placeholder="Nombre Evento / Cliente" oninput="syncSpecial()" autocomplete="off">
+            <input type="date" id="esp-fecha-evento" oninput="syncSpecial()">
+        </div>
+        <textarea id="esp-obs" rows="2" style="margin-top:10px;" placeholder="Observaciones..." oninput="syncSpecial()" autocomplete="off"></textarea>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeInventory()"></div>
+<div id="inventory-modal">
+    <h3 style="margin-top:0;">Gestión de Productos</h3>
+    <div id="manage-area">
+        <label>Nombre del Producto:</label>
+        <input type="text" id="manage-name" autocomplete="off">
+        <label style="margin-top:10px;">U/M:</label>
+        <input type="text" id="manage-um" autocomplete="off">
+        <div style="margin-top:15px; display:flex; gap:10px;">
+            <button class="btn btn-add" id="btn-save-prod" onclick="saveProduct()">GUARDAR CAMBIOS</button>
+            <button class="btn" style="background:#666; color:white;" onclick="closeInventory()">CERRAR</button>
+        </div>
+    </div>
+    <hr>
+    <p style="font-size: 10px; color: red;">* Al borrar aquí, el producto ya no aparecerá en el buscador.</p>
+    <div style="max-height:200px; overflow-y:auto; border: 1px solid #eee; padding: 5px;">
+        <table style="font-size:11px; width:100%;">
+            <tbody id="manage-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="capture-area" class="container">
+    <div class="header">
+        <h1 class="logo">Welchez CAFÉ</h1>
+        <p class="subtitle">PEDIDO A CENTRO DE PRODUCCIÓN</p>
+    </div>
+
+    <div id="view-esp-badge" style="display:none; background:#fff3e0; border:2px dashed #f57c00; padding:15px; margin-bottom:20px; border-radius:8px; text-align:center;">
+        <h2 style="margin:0; color: #d35400;">* PEDIDO ESPECIAL *</h2>
+        <p><strong>CLIENTE:</strong> <span id="view-esp-cliente"></span> | <strong>ENTREGA:</strong> <span id="view-esp-fecha-ent"></span></p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <div>
+            <p><strong>SUCURSAL:</strong> <span id="view-suc">________________</span></p>
+            <p><strong>FECHA SOLICITUD:</strong> <span id="view-date"></span></p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="5%">Nº</th>
+                <th width="55%">DESCRIPCIÓN DEL PRODUCTO</th>
+                <th width="10%">U/M</th>
+                <th width="15%">EXISTENCIA</th>
+                <th width="15%">PEDIR</th>
+                <th class="btn-remove" width="40"></th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+
+    <div id="view-obs-box" style="display:none; margin-top:20px;">
+        <strong>OBSERVACIONES:</strong>
+        <p id="view-obs-text" style="border:1px solid #ddd; padding:10px; font-style:italic; min-height: 20px;"></p>
+    </div>
+
+    <div style="margin-top: 40px;">
+        <p><strong>PEDIDO REALIZADO POR:</strong> <input type="text" style="border:none; border-bottom: 1px solid #000; width: 300px; font-weight: bold;" autocomplete="off"></p>
+    </div>
+
+    <div class="signatures">
+        <div class="sig-line">ENTREGADO POR (SUCURSAL)</div>
+        <div class="sig-line">RECIBIDO POR (PRODUCCIÓN)</div>
+    </div>
+</div>
+
+<div class="action-btns" style="text-align: center; margin-top: 30px; padding-bottom: 50px;">
+    <button class="btn btn-pdf" onclick="window.print()">DESCARGAR PDF</button>
+    <button class="btn btn-jpg" onclick="downloadJPG()">DESCARGAR JPG</button>
+</div>
+
+<script>
+    let data = {
+        "COCINA": [
+            {n:"POLLO P/CHILAQUILES EN PORCIONES CP", u:"LBS"}, {n:"PROSHUTTO EN PORCIONES CP", u:"LBS"}, {n:"ADEREZO AGUACATE", u:"LBS"},
+            {n:"ADEREZO BERRY VERDE", u:"LBS"}, {n:"ADEREZO BLUES", u:"LBS"}, {n:"ADEREZO CHIPOTLE CP", u:"LBS"},
+            {n:"ADEREZO GUACAMAYA", u:"LBS"}, {n:"ADEREZO TAHINI", u:"LBS"}, {n:"ARROZ INTEGRAL CON CHIPILIN CP", u:"LBS"},
+            {n:"ARROZ SALVAJE", u:"BOLSA"}, {n:"BERENJENA RALLADA CP", u:"LBS"}, {n:"CERDITO COPANECO", u:"LBS"},
+            {n:"CHIMICHURRI CP", u:"LBS"}, {n:"CHORIZO COPANECO", u:"LBS"}, {n:"CREMA DE ZANAHORIA CP", u:"LBS"},
+            {n:"ENCEBOLLADA CP", u:"LBS"}, {n:"ENCURTIDO DE PAPAYA", u:"LBS"}, {n:"ESCABECHE CP", u:"LBS"},
+            {n:"FILETE DE RES EN PORCIONES CP", u:"LBS"}, {n:"FRIJOLES PREPARADOS CP", u:"LBS"}, {n:"GRANOLA NATURAL/16 ONZAS CP", u:"LBS"},
+            {n:"GRAVY PARA PAVO", u:"LBS"}, {n:"HONEY MUSTARD CP", u:"LBS"}, {n:"JAMON DE PAVO AHUMADO PORCIONADO CP", u:"LBS"},
+            {n:"JAMON VIRGINIA AHUMADO PORCIONADO CP", u:"LBS"}, {n:"LOROCO EN PORCIONES CP", u:"LBS"}, {n:"MALANGA EN BOLSA CP", u:"BOLSA"},
+            {n:"PASTA SEÑOR DE LOS QUESOS CP", u:"LBS"}, {n:"PESTO CP", u:"LBS"}, {n:"PUDDING CHIA", u:"UND"},
+            {n:"QUESO CHEDDAR PORCIONADO CP", u:"LBS"}, {n:"QUESO GOUDA PORCIONADO CP", u:"LBS"}, {n:"QUESO MOZZARELLA PORCIONADO CP", u:"LBS"},
+            {n:"QUESO SUIZO PORCIONADO CP", u:"LBS"}, {n:"QUINOA CP", u:"LBS"}, {n:"RELLENO DE PAVO", u:"LBS"},
+            {n:"SALSA BUFALO", u:"LBS"}, {n:"SALSA JADE CP", u:"LBS"}, {n:"SALSA MARINITA", u:"LBS"},
+            {n:"SALSA PARA CERDITO", u:"LBS"}, {n:"SALSA RANCH", u:"LBS"}, {n:"SALSA RANCHERA", u:"LBS"},
+            {n:"SOPA CAMPESINA", u:"LBS"}, {n:"SOPA DE CEBOLLA CHIPILIN", u:"LBS"}, {n:"SOPA TOMATIFICANTE", u:"LBS"},
+            {n:"SYRUP DE JAMAICA CP", u:"LBS"}, {n:"TAMALES CP", u:"UND"}, {n:"TOMATE ASADO CP", u:"LBS"},
+            {n:"TORTILLA PARA CHILAQUIL", u:"UND"}, {n:"YOGUT CASERO CP", u:"UND"}
+        ],
+        "PANADERIA": [
+            {n:"CHOCOLATINES BICOLOR CP", u:"UND"}, {n:"CHOCOLATINES CP", u:"UND"}, {n:"CROISSANT NUBE CP", u:"UND"},
+            {n:"CROISSANT RELLENO DE PISTACHOS / BICOLOR", u:"UND"}, {n:"CUBOS DE PISTACHOS CP", u:"UND"},
+            {n:"GALLETA CHOCOCHIPS CP", u:"UND"}, {n:"GALLETA DE AVENA CP", u:"UND"}, {n:"GALLETA DE JENGIBRE CP", u:"UND"},
+            {n:"GALLETA DE MANI Y CHOCOLATE CP", u:"UND"}, {n:"MINI CROISSANT CP", u:"UND"}, {n:"MINI GALLETA AVENA", u:"UND"},
+            {n:"MINI GALLETA CHOCO CHIPS", u:"UND"}, {n:"MINI GALLETA DE JENGIBRE CP", u:"UND"}, {n:"MINI GALLETA MATCHA", u:"UND"},
+            {n:"MINI PAN PARMESANO CP", u:"UND"}, {n:"MINI SEMITAS", u:"UND"}, {n:"PAN BLANCO CP", u:"UND"},
+            {n:"PAN BRIOCHE CP", u:"UND"}, {n:"PAN BRIOCHE/TIPO MOLDE", u:"UND"}, {n:"PAN CAPRICHO CP", u:"UND"},
+            {n:"PAN CIABATTA CP", u:"UND"}, {n:"PAN CROISSANT CP", u:"UND"}, {n:"PAN CUBO", u:"UND"},
+            {n:"PAN DE MUERTO CP", u:"UND"}, {n:"PAN INTEGRAL CP", u:"UND"}, {n:"PAN LINAZA CP", u:"UND"},
+            {n:"PAN MASA MADRE CP", u:"UND"}, {n:"PAN MINI INTEGRAL", u:"UND"}, {n:"PAN MOLDE CP", u:"UND"},
+            {n:"PAN PARMESANO CP", u:"UND"}, {n:"ROLES DE CANELA CP", u:"UND"}, {n:"ROSCA DE REYES GRANDE", u:"UND"},
+            {n:"ROSCA DE REYES MEDIANA", u:"UND"}, {n:"ROSCA DE REYES PEQUEÑA", u:"UND"}, {n:"SEMITAS CP", u:"BANDEJA"}
+        ],
+        "REPOSTERIA": [
+            {n:"ALFAJOR NAVIDEÑO CP", u:"UND"}, {n:"PASTEL OREO", u:"UND"}, {n:"MARQUESOTE", u:"UND"}, {n:"MOCCA CHEESSECAKE", u:"UND"},
+            {n:"MUFFIN DE MANZANA", u:"UND"}, {n:"TIRAMISU PEQUEÑO 6 PIEZAS CP", u:"UND"}, {n:"PASTEL TRES LECHES 8 PIEZAS", u:"UND"},
+            {n:"CHAMPURRADAS", u:"UND"}, {n:"STRUDEL DE MANZANA", u:"UND"}, {n:"ENERGY BALL", u:"UND"},
+            {n:"TRUFA DE DATIL", u:"UND"}, {n:"BROWNIES", u:"UND"}, {n:"SHORTCAKE DE FRESA", u:"UND"},
+            {n:"QUESADILLA COPANEECA", u:"UND"}, {n:"ROSALINA", u:"UND"}, {n:"SUSPIRO DE LIMON", u:"UND"},
+            {n:"PASTEL DE ZANAHORIA", u:"UND"}, {n:"BANANERO CP", u:"UND"}, {n:"BOTE DE CHILE LA BRAVA 148 ML CP", u:"UND"},
+            {n:"BRAZO GITANO CP", u:"UND"}, {n:"BRISA CARIBEÑA CP", u:"UND"}, {n:"CHEESSCKE DE FRESA CP", u:"UND"},
+            {n:"CHEESSCKE DE MORA", u:"UND"}, {n:"CHILE LA BRAVA 2 LTS CP", u:"UND"}, {n:"CHORTCAKE DE FRESA CP", u:"UND"},
+            {n:"COCO CARAMELO CP", u:"UND"}, {n:"FLAN DE COCO CP", u:"UND"}, {n:"FLAN DE QUESO CP", u:"UND"},
+            {n:"JALEA DE PIÑA", u:"UND"}, {n:"JALEA FRESA CP", u:"UND"}, {n:"MINI DELIRIO MOUV", u:"UND"},
+            {n:"MINI PISTACHO CHOCOLATE", u:"UND"}, {n:"MINI QUESADILLA", u:"UND"}, {n:"MINI RICE CRYSPI CP", u:"UND"},
+            {n:"MINI ROSALINA CP", u:"UND"}, {n:"PANCETA CP", u:"UND"}, {n:"PAÑUELOS DE PESTO,TOMATE,MOZZARELLA CP", u:"UND"},
+            {n:"PASTEL DE TRES LECHES CP", u:"UND"}, {n:"PASTEL GERMANICO CP", u:"UND"}, {n:"PASTEL PISTACHO Y CARDAMOMO CP", u:"UND"},
+            {n:"PASTEL SNIKERS CP", u:"UND"}, {n:"PASTEL TRES LECHES PEQ. (6 PZS) CP", u:"UND"}, {n:"PECAN PIE CP", u:"UND"},
+            {n:"PISTACHITOS", u:"UND"}, {n:"PURE DE CALABAZA CP", u:"UND"}, {n:"RICE CRISPY CP", u:"UND"},
+            {n:"ROMPOPO CP", u:"UND"}, {n:"ROSCA TZIKIN CP", u:"UND"}, {n:"TARTA LINZER CP", u:"UND"},
+            {n:"TIRAMISU GRANDE CP", u:"UND"}, {n:"TIRAMISU MEDIANO 8 PZS CP", u:"UND"}, {n:"TORTA CHILENA GRANDE CP", u:"UND"},
+            {n:"TORTA CHILENA PEQ. 6 PEDAZOS CP", u:"UND"}, {n:"TORTA DE ALMENDRA CP", u:"UND"}, {n:"TORTA DE BANANO CP", u:"UND"}
+        ]
+    };
+
+    let editingIndex = -1;
+    document.getElementById('view-date').innerText = new Date().toLocaleDateString();
+
+    function updateItems() {
+        const dep = document.getElementById('dep-select').value;
+        const dl = document.getElementById('prods');
+        dl.innerHTML = ""; // Limpieza total del buscador antes de cargar
+        if(dep && data[dep]) {
+            data[dep].forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item.n;
+                dl.appendChild(opt);
+            });
+        }
+    }
+
+    function addRow() {
+        const prodName = document.getElementById('prod-in').value.trim().toUpperCase();
+        const dep = document.getElementById('dep-select').value;
+        if(!prodName) return alert("Escribe o selecciona un producto");
+        document.getElementById('view-suc').innerText = document.getElementById('suc-select').value;
+        let unit = "UND";
+        if(dep && data[dep]) {
+            const found = data[dep].find(i => i.n === prodName);
+            if(found) unit = found.u;
+        }
+        const tbody = document.getElementById('table-body');
+        const count = tbody.children.length + 1;
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${count}</td><td class="text-left">${prodName}</td><td>${unit}</td><td><input type="number" style="width:100%; border:none; text-align:center;"></td><td><input type="number" style="width:100%; border:none; text-align:center; font-weight:bold;"></td><td class="btn-remove"><button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;">X</button></td>`;
+        tbody.appendChild(row);
+        document.getElementById('prod-in').value = "";
+    }
+
+    function openInventory() {
+        const dep = document.getElementById('dep-select').value;
+        if(!dep) return alert("Selecciona un Departamento primero.");
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('inventory-modal').style.display = 'block';
+        renderManageList();
+    }
+
+    function closeInventory() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('inventory-modal').style.display = 'none';
+        editingIndex = -1;
+        document.getElementById('manage-name').value = "";
+        document.getElementById('manage-um').value = "";
+        document.getElementById('btn-save-prod').innerText = "GUARDAR CAMBIOS";
+    }
+
+    function renderManageList() {
+        const dep = document.getElementById('dep-select').value;
+        const list = document.getElementById('manage-list');
+        list.innerHTML = "";
+        if(data[dep]) {
+            data[dep].forEach((item, index) => {
+                list.innerHTML += `<tr style="border-bottom: 1px solid #eee;"><td class="text-left">${item.n} (${item.u})</td><td style="text-align:right;"><button onclick="editProduct(${index})">✎</button> <button onclick="deleteProduct(${index})" style="color:red; margin-left:5px;">X</button></td></tr>`;
+            });
+        }
+    }
+
+    function saveProduct() {
+        const dep = document.getElementById('dep-select').value;
+        const n = document.getElementById('manage-name').value.trim().toUpperCase();
+        const u = document.getElementById('manage-um').value.trim().toUpperCase();
+        if(!n || !u) return alert("Completa ambos campos");
+        if(editingIndex > -1) { data[dep][editingIndex] = {n, u}; } else { data[dep].push({n, u}); }
+        updateItems();
+        renderManageList();
+        editingIndex = -1;
+        document.getElementById('manage-name').value = "";
+        document.getElementById('manage-um').value = "";
+        document.getElementById('btn-save-prod').innerText = "GUARDAR CAMBIOS";
+    }
+
+    function editProduct(index) {
+        const dep = document.getElementById('dep-select').value;
+        const item = data[dep][index];
+        document.getElementById('manage-name').value = item.n;
+        document.getElementById('manage-um').value = item.u;
+        editingIndex = index;
+        document.getElementById('btn-save-prod').innerText = "ACTUALIZAR PRODUCTO";
+    }
+
+    function deleteProduct(index) {
+        if(confirm("¿Eliminar este producto de la lista?")) {
+            const dep = document.getElementById('dep-select').value;
+            data[dep].splice(index, 1);
+            updateItems(); // Esto limpia el buscador inmediatamente
+            renderManageList();
+        }
+    }
+
+    function toggleSpecial() {
+        const p = document.getElementById('input-special-panel');
+        const badge = document.getElementById('view-esp-badge');
+        const isVisible = p.style.display === 'block';
+        p.style.display = isVisible ? 'none' : 'block';
+        badge.style.display = isVisible ? 'none' : 'block';
+        document.getElementById('view-obs-box').style.display = isVisible ? 'none' : 'block';
+        const btn = document.getElementById('btn-toggle-special');
+        btn.innerText = isVisible ? "★ ACTIVAR PEDIDO ESPECIAL" : "★ DESACTIVAR PEDIDO ESPECIAL";
+        btn.style.background = isVisible ? "#f39c12" : "#d32f2f";
+    }
+
+    function syncSpecial() {
+        document.getElementById('view-esp-cliente').innerText = document.getElementById('esp-cliente').value;
+        document.getElementById('view-esp-fecha-ent').innerText = document.getElementById('esp-fecha-evento').value;
+        document.getElementById('view-obs-text').innerText = document.getElementById('esp-obs').value;
+    }
+
+    function downloadJPG() {
+        const area = document.getElementById('capture-area');
+        const removes = document.querySelectorAll('.btn-remove');
+        removes.forEach(r => r.style.visibility = 'hidden');
+        html2canvas(area, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Pedido_Welchez.jpg`;
+            link.href = canvas.toDataURL("image/jpeg", 0.9);
+            link.click();
+            removes.forEach(r => r.style.visibility = 'visible');
+        });
+    }
+
+    function addSucursal() {
+        const n = prompt("Nombre de la sucursal:");
+        if(n) {
+            const s = document.getElementById('suc-select');
+            const o = document.createElement('option');
+            o.value = n; o.text = n;
+            s.add(o); s.value = n;
+        }
+    }
+</script>
+
+</body>
+</html>
