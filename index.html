@@ -99,7 +99,7 @@
               <i class="fa-solid fa-calculator"></i> Contabilidad
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item restringido" onclick="validarAcceso('contabilidad1.html')">Formulario 1</a></li>
+              <li><a class="dropdown-item restringido" onclick="validarAcceso('TRASLADOS DE PRODUCCIONES A LOS CAFES.html')">TRASLADOS DE PRODUCCIONES A LOS CAFES</a></li>
               <li><a class="dropdown-item restringido" onclick="validarAcceso('contabilidad2.html')">Formulario 2</a></li>
             </ul>
           </li>
@@ -160,6 +160,16 @@
               <li><a class="dropdown-item" href="trasladosaloscafes.html">Formulario de Traslados de equipos a los cafes</a></li>
             </ul>
           </li>
+          
+           <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="trasladosDropdown" role="button" data-bs-toggle="dropdown">
+              <i class="fa-solid fa-truck"></i> Centro de Produccion A & B
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item restringido" onclick="validarAcceso('SISTEMA DE IVENTARIO.html')">SISTEMA DE INVENTARIO EN CP 1</a></li>
+            </ul>
+          </li>
+
 
         </ul>
       </div>
@@ -185,6 +195,19 @@
     }
   </script>
 
+ <script>
+    function validarAcceso(urlDestino) {
+      const CLAVE_CORRECTA = "welchez2026"; 
+      const passwordEntrada = prompt("Acceso a Centro de Produccion A & B. Ingrese la clave autorizada:");
+
+      if (passwordEntrada === CLAVE_CORRECTA) {
+        window.location.href = urlDestino;
+      } else if (passwordEntrada !== null) {
+        alert("Contraseña incorrecta. Solo personal de Centro de Produccion A & B.");
+      }
+    }
+  </script>
+  
 </body>
 </html>
 
