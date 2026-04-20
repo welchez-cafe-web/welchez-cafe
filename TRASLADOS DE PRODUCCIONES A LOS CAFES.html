@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Welchez - Sistema Global de Inventarios</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root { --p-color: #2c3e50; --s-color: #27ae60; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: var(--p-color); margin: 0; }
+        
+        .menu-ingreso { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #f1f4f5; padding: 15px; border-radius: 8px; border: 1px solid #dcdde1; }
+        label { display: block; font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #555; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+        
+        button { background: var(--s-color); color: white; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { opacity: 0.9; }
+        .btn-blue { background: #2980b9; }
+        .btn-red { background: #e74c3c; }
+        .btn-sm { font-size: 10px; padding: 4px 8px; }
+
+        .tabla-contenedor { overflow-x: auto; margin-top: 15px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 11px; }
+        th, td { border: 1px solid #aaa; padding: 6px; text-align: center; color: #000; }
+        th { background: #dcdde1; font-weight: bold; }
+        
+        .nombre-prod { text-align: left; font-weight: bold; min-width: 200px; position: sticky; left: 0; background: #fff; z-index: 5; }
+        .col-total-mes { background: #ffffd1; font-weight: bold; }
+        .col-costo-u { background: #e8f4fd; font-weight: bold; }
+        .col-total-lps { background: #f8d7da; font-weight: bold; }
+        
+        .input-mes { border: none; border-bottom: 2px solid var(--s-color); font-size: 1.1rem; font-weight: bold; color: var(--p-color); width: 220px; outline: none; background: transparent; }
+        .config-bar { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align:center; color: var(--p-color);">WELCHEZ - TRASLADOS DE PRODUCCIONES A LOS CAFES</h1>
+
+    <div class="card">
+        <label>GESTIÓN DE SUCURSALES:</label>
+        <div class="config-bar">
+            <button onclick="agregarSucursal()" class="btn-blue">+ Agregar Nueva Sucursal</button>
+            <button onclick="eliminarSucursalActual()" class="btn-red">Eliminar Sucursal Seleccionada</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Registro de Movimientos</h2>
+        <div class="menu-ingreso" style="margin-top:10px;">
+            <div>
+                <label>Sucursal Activa</label>
+                <select id="main_sucursal" onchange="cambiarSucursal()"></select>
+            </div>
+            <div>
+                <label>Producto (A-Z)</label>
+                <select id="in_producto_select"></select>
+                <button onclick="nuevoProductoPrompt()" class="btn-blue" style="margin-top:5px; width:100%; font-size:10px;">+ Nuevo Producto</button>
+            </div>
+            <div>
+                <label>Día (1-31)</label>
+                <input type="number" id="in_dia" min="1" max="31" value="1">
+            </div>
+            <div>
+                <label>Cantidad</label>
+                <input type="number" id="in_cantidad" step="0.01" placeholder="0.00">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="registrarMovimiento()" style="width: 100%; height: 38px;">REGISTRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <input type="text" id="mes_correspondiente" class="input-mes" placeholder="MES Y AÑO (Ej: MARZO 2026)">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="exportarExcel()" class="btn-blue">📥 Bajar Excel</button>
+                <button onclick="limpiarDatosSucursal()" class="btn-red">🧹 Limpiar Datos del Mes</button>
+            </div>
+        </div>
+
+        <div class="tabla-contenedor">
+            <table id="tablaInventario">
+                <thead><tr id="headerDias"></tr></thead>
+                <tbody id="cuerpoInventario"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Datos iniciales
+        let sucursales = JSON.parse(localStorage.getItem('w_sucursales')) || ["Welchez Rio de Piedras", "Welchez Pedregal", "Welchez La Entrada", "Welchez Aeropuerto"];
+        let productosPorSucursal = JSON.parse(localStorage.getItem('w_prods_v6')) || {};
+        let datosPorSucursal = JSON.parse(localStorage.getItem('w_datos_v6')) || {}; 
+        
+        document.getElementById('mes_correspondiente').value = localStorage.getItem('w_mes_v6') || "";
+
+        function save() {
+            localStorage.setItem('w_sucursales', JSON.stringify(sucursales));
+            localStorage.setItem('w_prods_v6', JSON.stringify(productosPorSucursal));
+            localStorage.setItem('w_datos_v6', JSON.stringify(datosPorSucursal));
+            localStorage.setItem('w_mes_v6', document.getElementById('mes_correspondiente').value);
+        }
+
+        function poblarSucursales() {
+            const sel = document.getElementById('main_sucursal');
+            const valAnterior = sel.value;
+            sel.innerHTML = sucursales.map(s => `<option value="${s}">${s}</option>`).join('');
+            if(sucursales.includes(valAnterior)) sel.value = valAnterior;
+        }
+
+        function agregarSucursal() {
+            const nueva = prompt("Nombre de la nueva sucursal:");
+            if(nueva && !sucursales.includes(nueva)) {
+                sucursales.push(nueva);
+                save();
+                poblarSucursales();
+                cambiarSucursal();
+            }
+        }
+
+        function eliminarSucursalActual() {
+            const suc = document.getElementById('main_sucursal').value;
+            if(confirm(`¿Seguro que desea borrar permanentemente la sucursal ${suc} y todos sus datos?`)) {
+                sucursales = sucursales.filter(s => s !== suc);
+                delete productosPorSucursal[suc];
+                delete datosPorSucursal[suc];
+                save();
+                poblarSucursales();
+                cambiarSucursal();
+            }
+        }
+
+        function cambiarSucursal() {
+            actualizarSelectProductos();
+            renderizarReporte();
+        }
+
+        function nuevoProductoPrompt() {
+            const suc = document.getElementById('main_sucursal').value;
+            if(!suc) return alert("Cree una sucursal primero");
+            const nom = prompt(`Nombre del producto para ${suc}:`);
+            if(!nom) return;
+            const um = prompt("Unidad de Medida:", "LBS");
+            const costo = parseFloat(prompt("Costo Unitario (Lps):", "0.00"));
+            
+            if(!productosPorSucursal[suc]) productosPorSucursal[suc] = [];
+            productosPorSucursal[suc].push({ nom, um, costo });
+            
+            // Ordenar alfabéticamente inmediatamente
+            ordenarProductos(suc);
+            
+            save();
+            actualizarSelectProductos();
+            renderizarReporte();
+        }
+
+        function ordenarProductos(suc) {
+            if(productosPorSucursal[suc]) {
+                productosPorSucursal[suc].sort((a, b) => a.nom.localeCompare(b.nom, 'es', {sensitivity: 'base'}));
+            }
+        }
+
+        function actualizarSelectProductos() {
+            const suc = document.getElementById('main_sucursal').value;
+            const sel = document.getElementById('in_producto_select');
+            const lista = productosPorSucursal[suc] || [];
+            sel.innerHTML = lista.map(p => `<option value="${p.nom}">${p.nom}</option>`).join('');
+        }
+
+        function registrarMovimiento() {
+            const suc = document.getElementById('main_sucursal').value;
+            const prod = document.getElementById('in_producto_select').value;
+            const dia = parseInt(document.getElementById('in_dia').value);
+            const cant = parseFloat(document.getElementById('in_cantidad').value);
+
+            if(!prod || isNaN(cant)) return alert("Datos inválidos");
+
+            if(!datosPorSucursal[suc]) datosPorSucursal[suc] = {};
+            if(!datosPorSucursal[suc][prod]) datosPorSucursal[suc][prod] = {};
+            datosPorSucursal[suc][prod][dia] = (datosPorSucursal[suc][prod][dia] || 0) + cant;
+            
+            save();
+            renderizarReporte();
+            document.getElementById('in_cantidad').value = "";
+        }
+
+        function renderizarReporte() {
+            const suc = document.getElementById('main_sucursal').value;
+            const header = document.getElementById('headerDias');
+            const cuerpo = document.getElementById('cuerpoInventario');
+            if(!suc) { cuerpo.innerHTML = ""; return; }
+
+            // Ordenar antes de mostrar
+            ordenarProductos(suc);
+
+            header.innerHTML = `<th>PRODUCTO</th><th>UM</th>` + 
+                Array.from({length: 31}, (_, i) => `<th>${i+1}</th>`).join('') + 
+                `<th class="col-total-mes">TOTAL MES</th><th class="col-costo-u">COSTO U.</th><th class="col-total-lps">TOTAL LPS</th><th>ACCIONES</th>`;
+
+            cuerpo.innerHTML = "";
+            let granTotal = 0;
+            const listaProds = productosPorSucursal[suc] || [];
+
+            listaProds.forEach((p, index) => {
+                let fila = `<tr><td class="nombre-prod">${p.nom}</td><td>${p.um}</td>`;
+                let sumaCant = 0;
+                for(let d=1; d<=31; d++) {
+                    let val = (datosPorSucursal[suc] && datosPorSucursal[suc][p.nom]) ? (datosPorSucursal[suc][p.nom][d] || "") : "";
+                    if(val !== "") sumaCant += val;
+                    fila += `<td>${val}</td>`;
+                }
+                let totalLps = sumaCant * p.costo;
+                granTotal += totalLps;
+                fila += `<td class="col-total-mes">${sumaCant.toFixed(2)}</td>
+                         <td class="col-costo-u">${p.costo.toFixed(2)}</td>
+                         <td class="col-total-lps">${totalLps.toFixed(2)}</td>
+                         <td>
+                            <button class="btn-orange btn-sm" onclick="editarProducto(${index})">✎</button>
+                            <button class="btn-red btn-sm" onclick="eliminarProducto(${index})">X</button>
+                         </td></tr>`;
+                cuerpo.innerHTML += fila;
+            });
+
+            cuerpo.innerHTML += `<tr>
+                <td colspan="34" style="text-align:right; font-weight:bold; padding:10px;">TOTAL GENERAL ${suc}:</td>
+                <td colspan="2" style="background: #27ae60; color: white; font-weight: bold;">L. ${granTotal.toFixed(2)}</td>
+                <td></td>
+            </tr>`;
+        }
+
+        function editarProducto(idx) {
+            const suc = document.getElementById('main_sucursal').value;
+            const p = productosPorSucursal[suc][idx];
+            const nNom = prompt("Editar nombre:", p.nom);
+            const nCos = prompt("Editar costo:", p.costo);
+            if(nNom && nCos) {
+                productosPorSucursal[suc][idx].nom = nNom;
+                productosPorSucursal[suc][idx].costo = parseFloat(nCos);
+                ordenarProductos(suc); // Re-ordenar por si cambió el nombre
+                save();
+                cambiarSucursal();
+            }
+        }
+
+        function eliminarProducto(idx) {
+            const suc = document.getElementById('main_sucursal').value;
+            if(confirm(`¿Eliminar ${productosPorSucursal[suc][idx].nom}?`)) {
+                productosPorSucursal[suc].splice(idx, 1);
+                save();
+                cambiarSucursal();
+            }
+        }
+
+        function limpiarDatosSucursal() {
+            const suc = document.getElementById('main_sucursal').value;
+            if(confirm(`¿Borrar movimientos de ${suc}?`)) {
+                datosPorSucursal[suc] = {};
+                save();
+                renderizarReporte();
+            }
+        }
+
+        function exportarExcel() {
+            const suc = document.getElementById('main_sucursal').value;
+            const table = document.getElementById('tablaInventario');
+            const wb = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(wb, `Welchez_${suc}.xlsx`);
+        }
+
+        document.getElementById('mes_correspondiente').addEventListener('input', save);
+        
+        // Carga inicial
+        poblarSucursales();
+        cambiarSucursal();
+    </script>
+</body>
+</html>

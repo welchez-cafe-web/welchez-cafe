@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema Welchez - Control e Impresión v7</title>
+    <style>
+        :root { --primary: #1a252f; --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
+        
+        .section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; background: #fff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        
+        label { font-weight: bold; font-size: 0.85em; color: #555; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
+        input:focus, select:focus { border-color: var(--accent); outline: none; background: #f0f7ff; }
+        
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; }
+        .btn-add { background: var(--success); }
+        .btn-edit { background: var(--warning); color: #fff; padding: 5px 10px; font-size: 0.8em; }
+        .btn-del { background: var(--danger); padding: 5px 10px; font-size: 0.8em; }
+        .btn-print { background: var(--primary); width: 100%; margin-top: 10px; }
+        .btn-excel { background: #1d6f42; width: 100%; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background: #f8f9fa; border-bottom: 2px solid #ddd; }
+
+        .filter-box { background: #ebf2f7; padding: 15px; border-radius: 8px; border: 1px solid #d1dbe5; margin-top: 10px; }
+        .no-print { display: block; }
+        .print-only { display: none; }
+
+        @media print {
+            .no-print, button, input, select, .section, h3, .catalogo-sec, .filter-box { display: none !important; }
+            .print-only { display: block !important; width: 100%; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            table { width: 100%; border: 1px solid #000; margin-top: 20px; }
+            th { background: #eee !important; color: #000 !important; font-size: 11pt; }
+            td { font-size: 10pt; }
+            h1 { font-size: 1.5em; text-align: center; margin-bottom: 5px; }
+            .print-subtitle { text-align: center; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align:center;" class="no-print">🥐 Inventario Welchez Pro v7</h1>
+
+    <div class="section catalogo-sec no-print">
+        <h3 id="cat-title">🛠️ 1. Catálogo Maestro de Productos</h3>
+        <input type="hidden" id="edit-index" value="-1">
+        <div class="grid">
+            <div><label>Código Único:</label><input type="text" id="cat_cod" onkeydown="foco(event, 'cat_nom')"></div>
+            <div><label>Nombre Producto:</label><input type="text" id="cat_nom" onkeydown="foco(event, 'cat_unid')"></div>
+            <div><label>Unidad Medida:</label><input type="text" id="cat_unid" onkeydown="foco(event, 'cat_depto')"></div>
+            <div>
+                <label>Departamento Sugerido:</label>
+                <select id="cat_depto">
+                    <option value="COCINA">COCINA</option>
+                    <option value="REPOSTERIA">REPOSTERIA</option>
+                    <option value="PANADERIA">PANADERIA</option>
+                </select>
+            </div>
+            <div style="align-self: flex-end;">
+                <button id="btn_guardar_cat" class="btn btn-add" onclick="guardarCatalogo()">Guardar / Actualizar</button>
+                <button class="btn" style="background:#95a5a6" onclick="limpiarCat()">Cancelar</button>
+            </div>
+        </div>
+        <div style="max-height: 180px; overflow-y: auto; margin-top: 15px;">
+            <table id="tablaCat">
+                <thead><tr><th>Código</th><th>Producto</th><th>Unidad</th><th>Depto.</th><th>Acciones</th></tr></thead>
+                <tbody id="bodyCat"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid no-print" style="grid-template-columns: 1fr 1fr;">
+        <div class="section">
+            <h3>📥 Registro de Entradas</h3>
+            <label>Escanear Código:</label>
+            <input type="text" id="e_cod" oninput="autoNombre(this.value, 'e_nom')" onkeydown="foco(event, 'e_cant')">
+            <label>Producto:</label>
+            <input type="text" id="e_nom" readonly style="background:#f9f9f9">
+            <div class="grid" style="margin-top:10px">
+                <div><label>Cantidad:</label><input type="number" id="e_cant" onkeydown="foco(event, 'e_fecha')"></div>
+                <div><label>F. Elaboración:</label><input type="date" id="e_fecha" onkeydown="foco(event, 'btn_reg_ent')"></div>
+            </div>
+            <label>Departamento:</label>
+            <select id="e_depto">
+                <option value="COCINA">COCINA</option>
+                <option value="REPOSTERIA">REPOSTERIA</option>
+                <option value="PANADERIA">PANADERIA</option>
+            </select>
+            <button id="btn_reg_ent" class="btn btn-add" style="width:100%" onclick="regEntrada()">Registrar Entrada</button>
+        </div>
+
+        <div class="section">
+            <h3>📤 Registro de Salidas</h3>
+            <label>Escanear Código:</label>
+            <input type="text" id="s_cod" oninput="autoNombre(this.value, 's_nom')" onkeydown="foco(event, 's_cant')">
+            <label>Producto:</label>
+            <input type="text" id="s_nom" readonly style="background:#f9f9f9">
+            <div class="grid" style="margin-top:10px">
+                <div><label>Cantidad:</label><input type="number" id="s_cant" onkeydown="foco(event, 's_fecha_elab')"></div>
+                <div><label>F. Elab. (Lote):</label><input type="date" id="s_fecha_elab" onkeydown="foco(event, 'btn_reg_sal')"></div>
+            </div>
+            <label>Sucursal Destino (Fija):</label>
+            <select id="s_suc"></select>
+            <button id="btn_reg_sal" class="btn btn-add" style="width:100%" onclick="regSalida()">Registrar Salida</button>
+        </div>
+    </div>
+
+    <div class="no-print section">
+        <h3>📊 Reportes e Impresión</h3>
+        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="filter-box">
+                <label>Entradas por Depto:</label>
+                <select id="f_ent_depto">
+                    <option value="TODOS">-- TODOS --</option>
+                    <option value="COCINA">COCINA</option>
+                    <option value="REPOSTERIA">REPOSTERIA</option>
+                    <option value="PANADERIA">PANADERIA</option>
+                </select>
+                <label style="margin-top:5px">Por Fecha de Registro:</label>
+                <input type="date" id="f_ent_fecha">
+                <button class="btn btn-print" onclick="imprimirFiltrado('entradas')">🖨️ Imprimir Entradas</button>
+            </div>
+
+            <div class="filter-box">
+                <label>Salidas por Fecha:</label>
+                <input type="date" id="f_sal_fecha">
+                <label style="margin-top:5px">Y por Destino:</label>
+                <select id="f_sal_dest"><option value="TODOS">-- TODOS --</option></select>
+                <button class="btn btn-print" onclick="imprimirFiltrado('salidas')">🖨️ Imprimir Salidas</button>
+            </div>
+
+            <div class="filter-box" style="display: flex; align-items: center;">
+                <button class="btn btn-excel" onclick="excelExistencias()">📊 Excel Stock Sumado</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="no-print">
+        <h3>📦 Stock Actual en Bodega</h3>
+        <table id="tablaStock">
+            <thead><tr><th>Código</th><th>Producto</th><th>Depto</th><th>Lote (Elab)</th><th>Stock</th><th>Unidad</th></tr></thead>
+            <tbody id="bodyStock"></tbody>
+        </table>
+    </div>
+
+    <div id="p-area" class="print-only">
+        <h1 id="p-title">REPORTE WELCHEZ</h1>
+        <div id="p-subtitle" class="print-subtitle"></div>
+        <table id="p-table"></table>
+    </div>
+
+</div>
+
+<script>
+    let db_cat = JSON.parse(localStorage.getItem('w_cat_v7')) || [];
+    let db_ent = JSON.parse(localStorage.getItem('w_ent_v7')) || [];
+    let db_sal = JSON.parse(localStorage.getItem('w_sal_v7')) || [];
+    let db_suc = ["WELCHEZ RIO DE PIEDRAS", "WELCHEZ PEDREGAL", "WELCHEZ LA ENTRADA", "WELCHEZ AEROPUERTO"];
+
+    function foco(e, nextId) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById(nextId).focus();
+        }
+    }
+
+    function guardarCatalogo() {
+        const cod = document.getElementById('cat_cod').value.toUpperCase().trim();
+        const nom = document.getElementById('cat_nom').value.toUpperCase().trim();
+        const unid = document.getElementById('cat_unid').value.toUpperCase().trim();
+        const depto = document.getElementById('cat_depto').value;
+        const editIdx = parseInt(document.getElementById('edit-index').value);
+
+        if(!cod || !nom) return alert("Código y Nombre requeridos");
+
+        const existe = db_cat.findIndex(p => p.cod === cod);
+        if (editIdx === -1 && existe !== -1) return alert("El código ya existe.");
+
+        if (editIdx > -1) db_cat[editIdx] = {cod, nom, unid, depto};
+        else db_cat.push({cod, nom, unid, depto});
+
+        localStorage.setItem('w_cat_v7', JSON.stringify(db_cat));
+        limpiarCat();
+        render();
+    }
+
+    function editarCat(idx) {
+        const p = db_cat[idx];
+        document.getElementById('cat_cod').value = p.cod;
+        document.getElementById('cat_nom').value = p.nom;
+        document.getElementById('cat_unid').value = p.unid;
+        document.getElementById('cat_depto').value = p.depto || 'COCINA';
+        document.getElementById('edit-index').value = idx;
+        document.getElementById('cat-title').innerText = "🛠️ Editando...";
+    }
+
+    function eliminarCat(idx) {
+        if(confirm("¿Eliminar?")) {
+            db_cat.splice(idx, 1);
+            localStorage.setItem('w_cat_v7', JSON.stringify(db_cat));
+            render();
+        }
+    }
+
+    function limpiarCat() {
+        document.getElementById('cat_cod').value = '';
+        document.getElementById('cat_nom').value = '';
+        document.getElementById('cat_unid').value = '';
+        document.getElementById('cat_depto').value = 'COCINA';
+        document.getElementById('edit-index').value = "-1";
+        document.getElementById('cat-title').innerText = "🛠️ 1. Catálogo Maestro de Productos";
+    }
+
+    // Auto-completado mejorado para incluir depto
+    function autoNombre(cod, target) {
+        const item = db_cat.find(p => p.cod === cod.toUpperCase());
+        if(item) {
+            document.getElementById(target).value = item.nom;
+            // Si estamos en la sección de entradas, seleccionamos el depto automáticamente
+            const deptoSelect = document.getElementById('e_depto');
+            if(deptoSelect) deptoSelect.value = item.depto || 'COCINA';
+        } else {
+            document.getElementById(target).value = '';
+        }
+    }
+
+    function regEntrada() {
+        const cod = document.getElementById('e_cod').value.toUpperCase();
+        const cant = parseFloat(document.getElementById('e_cant').value);
+        const fecha = document.getElementById('e_fecha').value;
+        const depto = document.getElementById('e_depto').value;
+        const p = db_cat.find(x => x.cod === cod);
+
+        if(!p || !cant || !fecha) return alert("Datos incompletos");
+
+        db_ent.push({cod, nom: p.nom, cant, fecha, depto, unid: p.unid, t: new Date().toISOString().split('T')[0]});
+        localStorage.setItem('w_ent_v7', JSON.stringify(db_ent));
+        
+        document.getElementById('e_cod').value = '';
+        document.getElementById('e_nom').value = '';
+        document.getElementById('e_cant').value = '';
+        document.getElementById('e_fecha').value = '';
+        document.getElementById('e_cod').focus();
+        render();
+    }
+
+    function regSalida() {
+        const cod = document.getElementById('s_cod').value.toUpperCase();
+        const cant = parseFloat(document.getElementById('s_cant').value);
+        const fechaElab = document.getElementById('s_fecha_elab').value;
+        const suc = document.getElementById('s_suc').value;
+        const p = db_cat.find(x => x.cod === cod);
+
+        if(!p || !cant || !fechaElab) return alert("Faltan datos");
+
+        const stock = calcularStock(cod, fechaElab);
+        if(stock < cant) return alert("Stock insuficiente.");
+
+        db_sal.push({
+            cod, nom: p.nom, cant, fechaElab, suc, unid: p.unid,
+            t: new Date().toISOString().split('T')[0]
+        });
+        localStorage.setItem('w_sal_v7', JSON.stringify(db_sal));
+
+        document.getElementById('s_cod').value = '';
+        document.getElementById('s_nom').value = '';
+        document.getElementById('s_cant').value = '';
+        document.getElementById('s_fecha_elab').value = '';
+        document.getElementById('s_cod').focus();
+        render();
+    }
+
+    function calcularStock(cod, fecha) {
+        const e = db_ent.filter(x => x.cod === cod && x.fecha === fecha).reduce((a, b) => a + b.cant, 0);
+        const s = db_sal.filter(x => x.cod === cod && x.fechaElab === fecha).reduce((a, b) => a + b.cant, 0);
+        return e - s;
+    }
+
+    function render() {
+        document.getElementById('bodyCat').innerHTML = db_cat.map((p, i) => `
+            <tr><td>${p.cod}</td><td>${p.nom}</td><td>${p.unid}</td><td>${p.depto || 'COCINA'}</td>
+            <td><button class="btn btn-edit" onclick="editarCat(${i})">Edit</button> 
+            <button class="btn btn-del" onclick="eliminarCat(${i})">X</button></td></tr>`).join('');
+
+        const sSel = document.getElementById('s_suc');
+        const fSel = document.getElementById('f_sal_dest');
+        if(sSel.innerHTML === "") {
+            const opts = db_suc.map(s => `<option value="${s}">${s}</option>`).join('');
+            sSel.innerHTML = opts;
+            fSel.innerHTML = `<option value="TODOS">-- TODOS --</option>` + opts;
+        }
+
+        let html = "";
+        let lotes = [];
+        db_ent.forEach(e => {
+            if(!lotes.some(l => l.cod === e.cod && l.fecha === e.fecha)) lotes.push(e);
+        });
+        lotes.forEach(l => {
+            const st = calcularStock(l.cod, l.fecha);
+            if(st > 0) html += `<tr><td>${l.cod}</td><td>${l.nom}</td><td>${l.depto}</td><td>${l.fecha}</td><td><b>${st}</b></td><td>${l.unid}</td></tr>`;
+        });
+        document.getElementById('bodyStock').innerHTML = html;
+    }
+
+    function imprimirFiltrado(tipo) {
+        const table = document.getElementById('p-table');
+        const title = document.getElementById('p-title');
+        const subtitle = document.getElementById('p-subtitle');
+        let html = "";
+
+        if(tipo === 'entradas') {
+            const depto = document.getElementById('f_ent_depto').value;
+            const fecha = document.getElementById('f_ent_fecha').value;
+            title.innerText = "REPORTE DE ENTRADAS - WELCHEZ";
+            subtitle.innerText = `Depto: ${depto} | Fecha Registro: ${fecha || 'Todas'}`;
+
+            let filtrados = db_ent;
+            if(depto !== 'TODOS') filtrados = filtrados.filter(e => e.depto === depto);
+            if(fecha) filtrados = filtrados.filter(e => e.t === fecha);
+
+            html = "<thead><tr><th>Fecha Reg.</th><th>Código</th><th>Producto</th><th>Cant.</th><th>Unidad</th><th>F. Elaboración</th></tr></thead><tbody>";
+            filtrados.forEach(e => {
+                html += `<tr><td>${e.t}</td><td>${e.cod}</td><td>${e.nom}</td><td>${e.cant}</td><td>${e.unid}</td><td>${e.fecha}</td></tr>`;
+            });
+        } 
+        else {
+            const fecha = document.getElementById('f_sal_fecha').value;
+            const dest = document.getElementById('f_sal_dest').value;
+            title.innerText = "REPORTE DE SALIDAS - WELCHEZ";
+            subtitle.innerText = `Filtro: ${fecha || 'Cualquier fecha'} | Destino: ${dest}`;
+
+            let filtrados = db_sal;
+            if(fecha) filtrados = filtrados.filter(s => s.t === fecha);
+            if(dest !== 'TODOS') filtrados = filtrados.filter(s => s.suc === dest);
+
+            filtrados.sort((a,b) => a.t.localeCompare(b.t) || a.suc.localeCompare(b.suc));
+
+            html = "<thead><tr><th>Fecha Salida</th><th>Destino</th><th>Código</th><th>Producto</th><th>Cant.</th><th>Unidad</th><th>Lote (Elab)</th></tr></thead><tbody>";
+            filtrados.forEach(s => {
+                html += `<tr><td>${s.t}</td><td>${s.suc}</td><td>${s.cod}</td><td>${s.nom}</td><td>${s.cant}</td><td>${s.unid}</td><td>${s.fechaElab}</td></tr>`;
+            });
+        }
+
+        table.innerHTML = html + "</tbody>";
+        window.print();
+    }
+
+    function excelExistencias() {
+        let csv = "REPORTE STOCK SUMADO - WELCHEZ\nCODIGO,PRODUCTO,STOCK TOTAL,UNIDAD\n";
+        db_cat.forEach(p => {
+            const e = db_ent.filter(x => x.cod === p.cod).reduce((a, b) => a + b.cant, 0);
+            const s = db_sal.filter(x => x.cod === p.cod).reduce((a, b) => a + b.cant, 0);
+            if(e - s > 0) csv += `${p.cod},${p.nom},${e-s},${p.unid}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Existencias_Welchez.csv";
+        link.click();
+    }
+
+    render();
+</script>
+</body>
+</html>
