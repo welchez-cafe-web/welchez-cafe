@@ -182,28 +182,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-  <script>
-    function validarAcceso(urlDestino) {
-      const CLAVE_CORRECTA = "welchez2026"; 
-      const passwordEntrada = prompt("Acceso a Contabilidad. Ingrese la clave autorizada:");
-
-      if (passwordEntrada === CLAVE_CORRECTA) {
-        window.location.href = urlDestino;
-      } else if (passwordEntrada !== null) {
-        alert("Contraseña incorrecta. Solo personal de contabilidad.");
-      }
-    }
-  </script>
-
  <script>
     function validarAcceso(urlDestino) {
       const CLAVE_CORRECTA = "welchez2026"; 
-      const passwordEntrada = prompt("Acceso a Centro de Produccion A & B. Ingrese la clave autorizada:");
+      const passwordEntrada = prompt("Acceso a Administrativo. Ingrese la clave autorizada:");
 
       if (passwordEntrada === CLAVE_CORRECTA) {
         window.location.href = urlDestino;
       } else if (passwordEntrada !== null) {
-        alert("Contraseña incorrecta. Solo personal de Centro de Produccion A & B.");
+        alert("Contraseña incorrecta. Solo personal Autorizado.");
       }
     }
   </script>
