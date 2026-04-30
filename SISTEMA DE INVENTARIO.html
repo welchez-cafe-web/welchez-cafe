@@ -1,45 +1,76 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Sistema Welchez - Control e Impresión v7</title>
     <style>
-        :root { --primary: #1a252f; --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
+        :root { --primary: #1a252f;
+        --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; }
+        body { font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: auto;
+        background: white; padding: 25px; border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
         
-        .section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; background: #fff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .section { margin-bottom: 25px;
+        padding: 15px; border: 1px solid #eee; border-radius: 8px; background: #fff;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;
+        }
         
-        label { font-weight: bold; font-size: 0.85em; color: #555; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
-        input:focus, select:focus { border-color: var(--accent); outline: none; background: #f0f7ff; }
+        label { font-weight: bold;
+        font-size: 0.85em; color: #555; display: block; margin-bottom: 5px; }
+        input, select { width: 100%;
+        padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em;
+        }
+        input:focus, select:focus { border-color: var(--accent); outline: none; background: #f0f7ff;
+        }
         
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; }
-        .btn-add { background: var(--success); }
-        .btn-edit { background: var(--warning); color: #fff; padding: 5px 10px; font-size: 0.8em; }
-        .btn-del { background: var(--danger); padding: 5px 10px; font-size: 0.8em; }
-        .btn-print { background: var(--primary); width: 100%; margin-top: 10px; }
-        .btn-excel { background: #1d6f42; width: 100%; }
+        .btn { padding: 10px 15px;
+        border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s;
+        }
+        .btn-add { background: var(--success);
+        }
+        .btn-edit { background: var(--warning); color: #fff; padding: 5px 10px; font-size: 0.8em;
+        }
+        .btn-del { background: var(--danger); padding: 5px 10px; font-size: 0.8em;
+        }
+        .btn-print { background: var(--primary); width: 100%; margin-top: 10px;
+        }
+        .btn-excel { background: #1d6f42; width: 100%;
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
-        th { background: #f8f9fa; border-bottom: 2px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em;
+        }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left;
+        }
+        th { background: #f8f9fa; border-bottom: 2px solid #ddd;
+        }
 
-        .filter-box { background: #ebf2f7; padding: 15px; border-radius: 8px; border: 1px solid #d1dbe5; margin-top: 10px; }
-        .no-print { display: block; }
-        .print-only { display: none; }
+        .filter-box { background: #ebf2f7; padding: 15px; border-radius: 8px; border: 1px solid #d1dbe5;
+        margin-top: 10px; }
+        .no-print { display: block;
+        }
+        .print-only { display: none;
+        }
 
         @media print {
-            .no-print, button, input, select, .section, h3, .catalogo-sec, .filter-box { display: none !important; }
-            .print-only { display: block !important; width: 100%; }
-            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
-            table { width: 100%; border: 1px solid #000; margin-top: 20px; }
-            th { background: #eee !important; color: #000 !important; font-size: 11pt; }
-            td { font-size: 10pt; }
-            h1 { font-size: 1.5em; text-align: center; margin-bottom: 5px; }
-            .print-subtitle { text-align: center; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 5px; }
+            .no-print, button, input, select, .section, h3, .catalogo-sec, .filter-box { display: none !important;
+            }
+            .print-only { display: block !important; width: 100%;
+            }
+            .container { box-shadow: none; border: none; width: 100%;
+            padding: 0; }
+            table { width: 100%;
+            border: 1px solid #000; margin-top: 20px; }
+            th { background: #eee !important;
+            color: #000 !important; font-size: 11pt; }
+            td { font-size: 10pt;
+            }
+            h1 { font-size: 1.5em; text-align: center; margin-bottom: 5px;
+            }
+            .print-subtitle { text-align: center; font-weight: bold; margin-bottom: 20px;
+            text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 5px; }
         }
     </style>
 </head>
@@ -177,12 +208,10 @@
         const unid = document.getElementById('cat_unid').value.toUpperCase().trim();
         const depto = document.getElementById('cat_depto').value;
         const editIdx = parseInt(document.getElementById('edit-index').value);
-
         if(!cod || !nom) return alert("Código y Nombre requeridos");
 
         const existe = db_cat.findIndex(p => p.cod === cod);
         if (editIdx === -1 && existe !== -1) return alert("El código ya existe.");
-
         if (editIdx > -1) db_cat[editIdx] = {cod, nom, unid, depto};
         else db_cat.push({cod, nom, unid, depto});
 
@@ -237,7 +266,6 @@
         const fecha = document.getElementById('e_fecha').value;
         const depto = document.getElementById('e_depto').value;
         const p = db_cat.find(x => x.cod === cod);
-
         if(!p || !cant || !fecha) return alert("Datos incompletos");
 
         db_ent.push({cod, nom: p.nom, cant, fecha, depto, unid: p.unid, t: new Date().toISOString().split('T')[0]});
@@ -257,12 +285,10 @@
         const fechaElab = document.getElementById('s_fecha_elab').value;
         const suc = document.getElementById('s_suc').value;
         const p = db_cat.find(x => x.cod === cod);
-
         if(!p || !cant || !fechaElab) return alert("Faltan datos");
 
         const stock = calcularStock(cod, fechaElab);
         if(stock < cant) return alert("Stock insuficiente.");
-
         db_sal.push({
             cod, nom: p.nom, cant, fechaElab, suc, unid: p.unid,
             t: new Date().toISOString().split('T')[0]
@@ -288,11 +314,12 @@
             <tr><td>${p.cod}</td><td>${p.nom}</td><td>${p.unid}</td><td>${p.depto || 'COCINA'}</td>
             <td><button class="btn btn-edit" onclick="editarCat(${i})">Edit</button> 
             <button class="btn btn-del" onclick="eliminarCat(${i})">X</button></td></tr>`).join('');
-
+        
         const sSel = document.getElementById('s_suc');
         const fSel = document.getElementById('f_sal_dest');
         if(sSel.innerHTML === "") {
             const opts = db_suc.map(s => `<option value="${s}">${s}</option>`).join('');
+            sSel = document.getElementById('s_suc').innerHTML = opts; // corregido en la referencia
             sSel.innerHTML = opts;
             fSel.innerHTML = `<option value="TODOS">-- TODOS --</option>` + opts;
         }
@@ -304,7 +331,7 @@
         });
         lotes.forEach(l => {
             const st = calcularStock(l.cod, l.fecha);
-            if(st > 0) html += `<tr><td>${l.cod}</td><td>${l.nom}</td><td>${l.depto}</td><td>${l.fecha}</td><td><b>${st}</b></td><td>${l.unid}</td></tr>`;
+            if(st > 0) html += `<tr><td>${l.cod}</td><td>${l.nom}</td><td>${l.depto}</td><td>${l.fecha}</td><td><b>${st.toFixed(2)}</b></td><td>${l.unid}</td></tr>`;
         });
         document.getElementById('bodyStock').innerHTML = html;
     }
@@ -314,7 +341,6 @@
         const title = document.getElementById('p-title');
         const subtitle = document.getElementById('p-subtitle');
         let html = "";
-
         if(tipo === 'entradas') {
             const depto = document.getElementById('f_ent_depto').value;
             const fecha = document.getElementById('f_ent_fecha').value;
@@ -357,7 +383,11 @@
         db_cat.forEach(p => {
             const e = db_ent.filter(x => x.cod === p.cod).reduce((a, b) => a + b.cant, 0);
             const s = db_sal.filter(x => x.cod === p.cod).reduce((a, b) => a + b.cant, 0);
-            if(e - s > 0) csv += `${p.cod},${p.nom},${e-s},${p.unid}\n`;
+            
+            let totalStock = e - s;
+            if(totalStock > 0) {
+                csv += `${p.cod},${p.nom},${totalStock.toFixed(2)},${p.unid}\n`;
+            }
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
