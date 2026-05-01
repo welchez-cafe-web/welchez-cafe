@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Sistema Welchez - Control e Impresión v7</title>
-    <style>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=4z1fDTPcaeirus4EmyuVTP96QEJZTy3JmjLkbiNiQ1o6sal8-7uACOqCMadfMapSYR8xRbi0du62wwEdTHra9pT8F3jD6kciayHX5p1YPnc" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly93ZWxjaGV6Y2FmZS5uZXRsaWZ5LmFwcC9zaXN0ZW1hJTIwZGUlMjBpbnZlbnRhcmlv"/><style>
         :root { --primary: #1a252f;
         --accent: #2980b9; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; }
         body { font-family: 'Segoe UI', Arial, sans-serif;
@@ -77,7 +77,8 @@
 <body>
 
 <div class="container">
-    <h1 style="text-align:center;" class="no-print">🥐 Inventario Welchez Pro v7</h1>
+    <h1 style="text-align:center;"
+    class="no-print">🥐 Inventario Welchez Pro v7</h1>
 
     <div class="section catalogo-sec no-print">
         <h3 id="cat-title">🛠️ 1. Catálogo Maestro de Productos</h3>
@@ -86,6 +87,7 @@
             <div><label>Código Único:</label><input type="text" id="cat_cod" onkeydown="foco(event, 'cat_nom')"></div>
             <div><label>Nombre Producto:</label><input type="text" id="cat_nom" onkeydown="foco(event, 'cat_unid')"></div>
             <div><label>Unidad Medida:</label><input type="text" id="cat_unid" onkeydown="foco(event, 'cat_depto')"></div>
+    
             <div>
                 <label>Departamento Sugerido:</label>
                 <select id="cat_depto">
@@ -99,7 +101,8 @@
                 <button class="btn" style="background:#95a5a6" onclick="limpiarCat()">Cancelar</button>
             </div>
         </div>
-        <div style="max-height: 180px; overflow-y: auto; margin-top: 15px;">
+        <div style="max-height: 180px;
+        overflow-y: auto; margin-top: 15px;">
             <table id="tablaCat">
                 <thead><tr><th>Código</th><th>Producto</th><th>Unidad</th><th>Depto.</th><th>Acciones</th></tr></thead>
                 <tbody id="bodyCat"></tbody>
@@ -109,6 +112,7 @@
 
     <div class="grid no-print" style="grid-template-columns: 1fr 1fr;">
         <div class="section">
+         
             <h3>📥 Registro de Entradas</h3>
             <label>Escanear Código:</label>
             <input type="text" id="e_cod" oninput="autoNombre(this.value, 'e_nom')" onkeydown="foco(event, 'e_cant')">
@@ -116,6 +120,7 @@
             <input type="text" id="e_nom" readonly style="background:#f9f9f9">
             <div class="grid" style="margin-top:10px">
                 <div><label>Cantidad:</label><input type="number" id="e_cant" onkeydown="foco(event, 'e_fecha')"></div>
+ 
                 <div><label>F. Elaboración:</label><input type="date" id="e_fecha" onkeydown="foco(event, 'btn_reg_ent')"></div>
             </div>
             <label>Departamento:</label>
@@ -130,7 +135,8 @@
         <div class="section">
             <h3>📤 Registro de Salidas</h3>
             <label>Escanear Código:</label>
-            <input type="text" id="s_cod" oninput="autoNombre(this.value, 's_nom')" onkeydown="foco(event, 's_cant')">
+            <input type="text" id="s_cod" oninput="autoNombre(this.value, 's_nom')" 
+            onkeydown="foco(event, 's_cant')">
             <label>Producto:</label>
             <input type="text" id="s_nom" readonly style="background:#f9f9f9">
             <div class="grid" style="margin-top:10px">
@@ -145,7 +151,8 @@
 
     <div class="no-print section">
         <h3>📊 Reportes e Impresión</h3>
-        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <div 
+        class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="filter-box">
                 <label>Entradas por Depto:</label>
                 <select id="f_ent_depto">
@@ -167,7 +174,8 @@
                 <button class="btn btn-print" onclick="imprimirFiltrado('salidas')">🖨️ Imprimir Salidas</button>
             </div>
 
-            <div class="filter-box" style="display: flex; align-items: center;">
+            <div class="filter-box" style="display: flex;
+            align-items: center;">
                 <button class="btn btn-excel" onclick="excelExistencias()">📊 Excel Stock Sumado</button>
             </div>
         </div>
@@ -317,10 +325,10 @@
         
         const sSel = document.getElementById('s_suc');
         const fSel = document.getElementById('f_sal_dest');
-        if(sSel.innerHTML === "") {
+        
+        if (sSel && sSel.innerHTML.trim() === "") {
             const opts = db_suc.map(s => `<option value="${s}">${s}</option>`).join('');
-            sSel = document.getElementById('s_suc').innerHTML = opts; // corregido en la referencia
-            sSel.innerHTML = opts;
+            sSel.innerHTML = opts; 
             fSel.innerHTML = `<option value="TODOS">-- TODOS --</option>` + opts;
         }
 
@@ -341,6 +349,7 @@
         const title = document.getElementById('p-title');
         const subtitle = document.getElementById('p-subtitle');
         let html = "";
+
         if(tipo === 'entradas') {
             const depto = document.getElementById('f_ent_depto').value;
             const fecha = document.getElementById('f_ent_fecha').value;
@@ -359,11 +368,14 @@
         else {
             const fecha = document.getElementById('f_sal_fecha').value;
             const dest = document.getElementById('f_sal_dest').value;
+            
             title.innerText = "REPORTE DE SALIDAS - WELCHEZ";
             subtitle.innerText = `Filtro: ${fecha || 'Cualquier fecha'} | Destino: ${dest}`;
 
             let filtrados = db_sal;
             if(fecha) filtrados = filtrados.filter(s => s.t === fecha);
+            
+            // Corrección aplicada aquí (uso correcto de dest y s.suc)
             if(dest !== 'TODOS') filtrados = filtrados.filter(s => s.suc === dest);
 
             filtrados.sort((a,b) => a.t.localeCompare(b.t) || a.suc.localeCompare(b.suc));
