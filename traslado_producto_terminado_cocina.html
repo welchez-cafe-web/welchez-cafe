@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welchez Café - Traslado de Producto Terminado de Cocina</title>
+    <!-- Librería externa para habilitar la descarga como Imagen PNG -->
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=BngFbwlZQTn_3uq3MW4tT2nqXK0W4ATG2RZvAUY5phW7YdXTBo63SP02_vlRv_e7P3zy-PhkfZgggYn-xwOHIJ3AYTxlMaRHkLUroqj4Q7ctrCYlHAimeTd86HDh1rXFYR1NDaqJhdTYOC9BY50TeclvHuYoHo3Ixcu69NRyo28cyQj6RtDElYB2KXw26TbWgzXo4j0rt6Y9CqmFamyHpyz9Pczm661oe2iF06c47tg48K7ScsshDib1vsXOnhLwuBHLKTcGYEBUnyMAQZCYOHmPjW_aX1Y_HTJT7-hgnIdtho-49iZDt2J2p_8geSoiRo0zXTjRZuW6EgZmgUspnRPq4xWoDC6THDrg3k0vFMc" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24tcnQudXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVEJJSmRHVnRjRjlrWVhSaEdqOEtNRE00TXpWak4yVTVPRGN5T1dZelpqTXdNREEyTlRJMU4ySTJNalUyTWpJNU1EUTRPV0V6TnpWaU1ETXdaRFE0TmhJTEVnY1ExY0hGaF80RUdBRSZmaWxlbmFtZT10cmFzbGFkb19wcm9kdWN0b190ZXJtaW5hZG9fY29jaW5hLmh0bWwmb3BpPTEwMzEzNTA1MA"/><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f1ea;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 950px;
+            border: 2px solid #5c4033;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #5c4033;
+            margin: 0 0 5px 0;
+            font-size: 26px;
+            font-weight: bold;
+        }
+        h2 {
+            text-align: center;
+            color: #5c4033;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+        label {
+            font-weight: bold;
+            color: #4a3525;
+            white-space: nowrap;
+        }
+        input[type="text"], input[type="date"], select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: #fafafa;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: #8b5a2b;
+            background-color: #fff;
+        }
+        .btn-inline {
+            background-color: #8b5a2b;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .btn-inline:hover {
+            background-color: #5c4033;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #8b5a2b;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #e8e2d5;
+            color: #5c4033;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+        th.cant { width: 10%; text-align: center; }
+        th.udm { width: 15%; text-align: center; }
+        th.desc { width: 45%; }
+        th.fecha-el { width: 25%; text-align: center; }
+        th.actions { width: 5%; text-align: center; }
+        
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #d9534f;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-delete:hover {
+            color: #c9302c;
+        }
+        .actions-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        .btn-action {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        .btn-action:hover {
+            background-color: #0056b3;
+        }
+        
+        .footer-section {
+            margin-top: 30px;
+            border-top: 1px dashed #8b5a2b;
+            padding-top: 15px;
+        }
+        .signature-line {
+            width: 300px;
+            border-bottom: 1px solid #333;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .received-by {
+            font-weight: bold;
+            color: #4a3525;
+            margin-top: 10px;
+        }
+        
+        @media print {
+            @page {
+                size: portrait;
+                margin: 0.4cm;
+            }
+            body { 
+                background-color: #fff; 
+                padding: 0; 
+            }
+            .container { 
+                border: none; 
+                box-shadow: none; 
+                padding: 10px;
+                max-width: 100%;
+            }
+            h1 { font-size: 22px; }
+            h2 { font-size: 18px; margin-bottom: 15px; }
+            .header-grid { margin-bottom: 15px; gap: 10px; }
+            
+            th, td { 
+                padding: 4px 6px !important; 
+                font-size: 11px !important;
+            }
+            input[type="text"], input[type="date"] {
+                font-size: 11px !important;
+                padding: 2px 4px !important;
+            }
+            
+            .actions-bar, .btn-inline, .btn-delete { display: none !important; }
+            th.actions, td.actions-cell { display: none !important; }
+            input, select { border: none !important; background: transparent !important; appearance: none; -webkit-appearance: none; }
+            .footer-section { margin-top: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="documento-traslado">
+    <h1>Welchez Café</h1>
+    <h2>Traslado de Producto Terminado de Cocina</h2>
+
+    <div class="header-grid">
+        <div class="form-group">
+            <label for="fecha">Fecha Traslado:</label>
+            <input type="date" id="fecha">
+        </div>
+        <div class="form-group">
+            <label for="responsable">Responsable:</label>
+            <input type="text" id="responsable" placeholder="Nombre del responsable">
+        </div>
+        <div class="form-group full-width">
+            <label for="sucursal">Sucursal destino:</label>
+            <select id="sucursal">
+                <option value="Welchez Río de Piedras">Welchez Río de Piedras</option>
+                <option value="Welchez Pedregal">Welchez Pedregal</option>
+                <option value="Welchez La Entrada">Welchez La Entrada</option>
+                <option value="Welchez Aeropuerto">Welchez Aeropuerto</option>
+            </select>
+            <button type="button" class="btn-inline" onclick="agregarSucursal()">Agregar nueva sucursal</button>
+        </div>
+    </div>
+
+    <!-- Lista de autocompletado para productos de Cocina -->
+    <datalist id="lista-productos-cocina"></datalist>
+
+    <table id="tabla-productos">
+        <thead>
+            <tr>
+                <th class="cant">Cantidad</th>
+                <th class="udm">U.M.</th>
+                <th class="desc">Descripción</th>
+                <th class="fecha-el">Fecha Elaboración</th>
+                <th class="actions"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" style="text-align: center;" placeholder="0"></td>
+                <td><input type="text" class="udm-field" style="text-align: center;" placeholder="-" readonly></td>
+                <td>
+                    <input type="text" class="desc-field" list="lista-productos-cocina" placeholder="Busque o escriba un producto de cocina..." oninput="actualizarUnidad(this)">
+                </td>
+                <td><input type="date" class="fecha-elab"></td>
+                <td class="actions-cell"><button class="btn-delete" onclick="eliminarFila(this)">×</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="actions-bar">
+        <button type="button" class="btn-action" onclick="agregarFila()">Agregar fila</button>
+        <button type="button" class="btn-action" onclick="window.print()">Guardar PDF</button>
+        <button type="button" class="btn-action" onclick="guardarComoImagen()">Guardar Imagen</button>
+    </div>
+
+    <div class="footer-section">
+        <div class="received-by">
+            Recibido por: <span class="signature-line"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Catálogo mapeado desde la imagen de cocina (Descripción -> Unidad de Medida)
+    const catalogoCocina = {
+        "POLLO P/CHILAQUILES EN PORCIONES  CP": "LBS",
+        "PROSHUTTO EN PORCIONES CP": "LBS",
+        "ADEREZO AGUACATE": "LBS",
+        "ADEREZO BERRY VERDE": "LBS",
+        "ADEREZO BLUES": "LBS",
+        "ADEREZO CHIPOTLE CP": "LBS",
+        "ADEREZO GUACAMAYA": "LBS",
+        "ADEREZO TAHINI": "LBS",
+        "ARROZ INTEGRAL CON CHIPILIN CP": "LBS",
+        "ARROZ SALVAJE": "LBS",
+        "BERENJENA RALLADA CP": "LBS",
+        "CERDITO COPANECO": "LBS",
+        "CHIMICHURRI CP": "LBS",
+        "CHORIZO COPANECO": "LBS",
+        "CREMA DE ZANAHORIA CP": "LBS",
+        "ENCEBOLLADA CP": "LBS",
+        "ENCURTIDO DE PAPAYA": "LBS",
+        "ESCABECHE CP": "LBS",
+        "FILETE DE RES EN PORCIONES  CP": "LBS",
+        "FRIJOLES PREPARADOS CP": "LBS",
+        "GRANOLA NATURAL/16 ONZAS CP": "LBS",
+        "GRAVY PARA PAVO": "LBS",
+        "HONEY MUSTARD CP": "LBS",
+        "JAMON DE PAVO AHUMADO PORCIONADO CP": "LBS",
+        "JAMON VIRGINIA AHUMADO PORCIONADO CP": "LBS",
+        "LOROCO EN PORCIONES CP": "LBS",
+        "MALANGA EN BOLSA CP": "BOLSA",
+        "PASTA SEÑOR DE LOS QUESOS CP": "LBS",
+        "PESTO CP": "LBS",
+        "PUDDING CHIA": "UND",
+        "QUESO CHEDDAR PORCIONADO CP": "LBS",
+        "QUESO GOUDA PORCIONADO CP": "LBS",
+        "QUESO MOZZARELLA PORCIONADO CP": "LBS",
+        "QUESO SUIZO PORCIONADO CP": "LBS",
+        "QUINOA CP": "LBS",
+        "RELLENO DE PAVO": "LBS",
+        "SALSA BUFALO": "LBS",
+        "SALSA JADE CP": "LBS",
+        "SALSA MARINITA": "LBS",
+        "SALSA PARA CERDITO": "LBS",
+        "SALSA RANCHERA": "LBS",
+        "SOPA CAMPESINA": "LBS",
+        "SOPA DE CEBOLLA CHIPILIN": "LBS",
+        "SOPA TOMATIFICANTE": "LBS",
+        "SYRUP DE JAMAICA CP": "LBS",
+        "TAMALES CP": "UND",
+        "TOMATE ASADO CP": "LBS",
+        "TORTILLA PARA CHILAQUIL": "UND",
+        "YOGURT CASERO CP": "UND"
+    };
+
+    window.onload = function() {
+        // Asignar fecha actual al traslado
+        const fechaInput = document.getElementById('fecha');
+        const hoy = new Date().toISOString().split('T')[0];
+        fechaInput.value = hoy;
+
+        // Asignar fecha actual por defecto a la primera fila de elaboración
+        document.querySelector('.fecha-elab').value = hoy;
+        
+        // Poblar datalist con productos de cocina
+        const datalist = document.getElementById('lista-productos-cocina');
+        for (const producto in catalogoCocina) {
+            const opt = document.createElement('option');
+            opt.value = producto;
+            datalist.appendChild(opt);
+        }
+    };
+
+    // Detectar producto y rellenar automáticamente la Unidad de Medida (U.M.)
+    function actualizarUnidad(inputElement) {
+        const fila = inputElement.closest('tr');
+        const udmField = fila.querySelector('.udm-field');
+        const valor = inputElement.value;
+
+        if (catalogoCocina[valor]) {
+            udmField.value = catalogoCocina[valor];
+            udmField.readOnly = true; // Si es del catálogo, se bloquea la U.M.
+        } else {
+            udmField.value = ""; 
+            udmField.readOnly = false; // Si escribe un producto personalizado, permite ingresar libremente la U.M.
+            udmField.placeholder = "Escriba U.M.";
+        }
+    }
+
+    function agregarSucursal() {
+        const nuevaSucursal = prompt("Ingrese el nombre de la nueva sucursal:");
+        if (nuevaSucursal && nuevaSucursal.trim() !== "") {
+            const selectSucursal = document.getElementById('sucursal');
+            const opt = document.createElement('option');
+            opt.value = nuevaSucursal.trim();
+            opt.textContent = nuevaSucursal.trim();
+            selectSucursal.appendChild(opt);
+            selectSucursal.value = opt.value;
+        }
+    }
+
+    function agregarFila() {
+        const tabla = document.getElementById('tabla-productos').getElementsByTagName('tbody')[0];
+        const nuevaFila = tabla.insertRow();
+        const hoy = new Date().toISOString().split('T')[0];
+
+        const celdaCant = nuevaFila.insertCell(0);
+        const celdaUdm = nuevaFila.insertCell(1);
+        const celdaDesc = nuevaFila.insertCell(2);
+        const celdaFechaElab = nuevaFila.insertCell(3);
+        const celdaActions = nuevaFila.insertCell(4);
+
+        celdaCant.innerHTML = '<input type="text" style="text-align: center;" placeholder="0">';
+        celdaUdm.innerHTML = '<input type="text" class="udm-field" style="text-align: center;" placeholder="-" readonly>';
+        celdaDesc.innerHTML = '<input type="text" class="desc-field" list="lista-productos-cocina" placeholder="Busque o escriba un producto de cocina..." oninput="actualizarUnidad(this)">';
+        celdaFechaElab.innerHTML = `<input type="date" class="fecha-elab" value="${hoy}">`;
+        celdaActions.className = 'actions-cell';
+        celdaActions.innerHTML = '<button class="btn-delete" onclick="eliminarFila(this)">×</button>';
+    }
+
+    function eliminarFila(boton) {
+        const fila = boton.parentNode.parentNode;
+        const tbody = fila.parentNode;
+        if (tbody.rows.length > 1) {
+            tbody.removeChild(fila);
+        } else {
+            alert("El formato debe tener al menos una fila.");
+        }
+    }
+
+    function guardarComoImagen() {
+        const contenedor = document.getElementById('documento-traslado');
+        const barraAcciones = document.querySelector('.actions-bar');
+        const botonesEliminar = document.querySelectorAll('.actions-cell');
+        const botonSucursal = document.querySelector('.btn-inline');
+        
+        barraAcciones.style.display = 'none';
+        botonSucursal.style.display = 'none';
+        botonesEliminar.forEach(btn => btn.style.display = 'none');
+        document.querySelectorAll('th.actions').forEach(th => th.style.display = 'none');
+
+        html2canvas(contenedor, {
+            scale: 2, 
+            backgroundColor: "#ffffff"
+        }).then(canvas => {
+            barraAcciones.style.display = 'flex';
+            botonSucursal.style.display = 'inline-block';
+            botonesEliminar.forEach(btn => btn.style.display = 'table-cell');
+            document.querySelectorAll('th.actions').forEach(th => th.style.display = 'table-cell');
+
+            const link = document.createElement('a');
+            link.download = 'traslado_cocina_welchez.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            alert("Error al generar la imagen.");
+            barraAcciones.style.display = 'flex';
+            botonSucursal.style.display = 'inline-block';
+            botonesEliminar.forEach(btn => btn.style.display = 'table-cell');
+        });
+    }
+</script>
+
+</body>
+</html>
