@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recetario - Welchez Café</title>
+    <!-- Librería para exportar a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #5c3d2e;
+            --secondary: #b85c38;
+            --light: #f4ebe1;
+            --dark: #2d2424;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary);
+        }
+
+        h1 { margin-bottom: 5px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 450px 1fr; }
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: relative;
+        }
+
+        .card.editando {
+            border: 2px solid var(--secondary);
+            background-color: #fff9f6;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        input[type="text"], textarea, input[type="file"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="file"] {
+            padding: 5px;
+            background: #fafafa;
+        }
+
+        textarea { resize: vertical; }
+
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-submit:hover { background-color: var(--secondary); }
+        
+        .btn-cancelar {
+            background-color: #757575;
+            margin-top: 8px;
+        }
+        .btn-cancelar:hover { background-color: #616161; }
+
+        /* Controles superiores del listado */
+        .controls-panel {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .controls-panel {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .opcion-impresion-box {
+            border: 1px solid #e0d5c1;
+            background: #fdfbf7;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .receta-item {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border-left: 5px solid var(--secondary);
+        }
+
+        .receta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .receta-header h3 { margin: 0; color: var(--primary); font-size: 22px; }
+
+        .receta-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .receta-actions button {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 13px;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-download { background-color: #2e7d32; }
+        .btn-download:hover { background-color: #1b5e20; }
+        .btn-edit { background-color: #f57c00; }
+        .btn-edit:hover { background-color: #e65100; }
+        .btn-delete { background-color: #c62828; }
+        .btn-delete:hover { background-color: #b71c1c; }
+
+        .receta-cuerpo {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 500px) {
+            .receta-cuerpo.con-foto {
+                grid-template-columns: 1fr 180px;
+            }
+        }
+
+        .receta-foto {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .pre-line { 
+            white-space: pre-line; 
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        /* ===================================================
+           ESTILOS ADAPTATIVOS PARA GENERACIÓN DE PDF PERFECTO
+           =================================================== */
+        #pdfWrapper {
+            background: #ffffff;
+            font-family: Arial, sans-serif;
+            color: #333333;
+            padding: 0;
+            margin: 0;
+        }
+
+        .pdf-page {
+            width: 100%;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        .pdf-header-title {
+            color: #5c3d2e;
+            border-bottom: 3px solid #b85c38;
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 26px;
+            text-transform: uppercase;
+        }
+
+        .pdf-layout {
+            display: flex;
+            gap: 20px;
+        }
+
+        .pdf-main-content {
+            flex: 1;
+        }
+
+        .pdf-side-photo {
+            width: 55mm;
+        }
+
+        .pdf-img {
+            width: 100%;
+            height: 50mm;
+            object-fit: cover;
+            border: 1px solid #bbbbbb;
+            border-radius: 4px;
+        }
+
+        .pdf-seccion-titulo {
+            color: #b85c38;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            margin-top: 15px;
+            border-bottom: 1px dashed #cccccc;
+            padding-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .pdf-texto {
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-line;
+            margin: 0 0 15px 0;
+        }
+
+        .pdf-footer-text {
+            text-align: right;
+            border-top: 1px solid #eeeeee;
+            padding-top: 8px;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #555555;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Recetario Digital de WELCHEZ CAFE</h1>
+        <p>Almacena, edita y diseña tus folletos o libros de cocina perfectamente</p>
+	<p>Nota: este es un editor para tu estacion de Trabajo</p>
+	<p>desing; by: Grevil Benitez</p>
+    </header>
+
+    <div class="grid">
+        <!-- Formulario de ingreso / edición -->
+        <div class="card" id="formularioCard">
+            <h2 id="formTitulo">Agregar Nueva Receta</h2>
+            <form id="recetaForm">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div class="form-group">
+                    <label for="titulo">Nombre de la Receta:</label>
+                    <input type="text" id="titulo" required placeholder="Ej. Capuchino Supremo">
+                </div>
+                <div class="form-group">
+                    <label for="foto">Foto de la Receta (Opcional):</label>
+                    <input type="file" id="foto" accept="image/*">
+                    <div id="previewContainer" style="margin-top: 5px; font-size: 12px; color: #555;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="ingredientes">Ingredientes:</label>
+                    <textarea id="ingredientes" rows="5" required placeholder="Ej.&#10;- 2 shots de espresso&#10;- 4 oz de leche entera"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="procedimiento">Procedimiento:</label>
+                    <textarea id="procedimiento" rows="6" required placeholder="Ej.&#10;1. Extraer el espresso...&#10;2. Texturizar la leche..."></textarea>
+                </div>
+                <button type="submit" id="btnSubmit" class="btn-submit">Guardar en mi Computadora</button>
+                <button type="button" id="btnCancelar" class="btn-submit btn-cancelar" style="display: none;" onclick="cancelarEdicion()">Cancelar Edición</button>
+            </form>
+        </div>
+
+        <!-- Listado y Panel de Configuración -->
+        <div>
+            <div class="card controls-panel">
+                <div>
+                    <label for="buscador">🔎 Buscar Receta:</label>
+                    <input type="text" id="buscador" placeholder="Filtrar por nombre...">
+                </div>
+                <div class="opcion-impresion-box">
+                    <label for="tipoMargen" style="color: #2e7d32;">📖 Modo de Descarga/Impresión:</label>
+                    <select id="tipoMargen">
+                        <option value="normal">Margen Normal Estándar (Centrado)</option>
+                        <option value="encuadernar">Dejar espacio para Encuadernar (Espiral/Resorte)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h2>Mis Recetas Guardadas</h2>
+            <div id="listaRecetas"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor Fantasma para procesar el PDF -->
+<div style="position: absolute; left: -9999px; top: -9999px;">
+    <div id="pdfContainer"></div>
+</div>
+
+<script>
+    const recetaForm = document.getElementById('recetaForm');
+    const formularioCard = document.getElementById('formularioCard');
+    const formTitulo = document.getElementById('formTitulo');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const btnCancelar = document.getElementById('btnCancelar');
+    const editIndexInput = document.getElementById('editIndex');
+    const previewContainer = document.getElementById('previewContainer');
+    
+    const listaRecetas = document.getElementById('listaRecetas');
+    const buscador = document.getElementById('buscador');
+    const fotoInput = document.getElementById('foto');
+    const tipoMargenSelect = document.getElementById('tipoMargen');
+    
+    let recetas = JSON.parse(localStorage.getItem('recetas')) || [];
+    let fotoTemporalBase64 = "";
+
+    function obtenerBase64(file) {
+        return new Promise((resolve, reject) => {
+            if (!file) resolve("");
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    fotoInput.addEventListener('change', function(e) {
+        if(this.files[0]) {
+            previewContainer.textContent = "Nueva foto lista para guardarse.";
+        }
+    });
+
+    function mostrarRecetas(filtro = '') {
+        listaRecetas.innerHTML = '';
+        
+        const recetasFiltradas = recetas.filter(r => 
+            r.titulo.toLowerCase().includes(filtro.toLowerCase())
+        );
+
+        if (recetasFiltradas.length === 0) {
+            listaRecetas.innerHTML = '<p style="text-align:center; color:#777;">No se encontraron recetas.</p>';
+            return;
+        }
+
+        recetasFiltradas.forEach((receta) => {
+            const indiceReal = recetas.indexOf(receta);
+            const div = document.createElement('div');
+            div.className = 'receta-item';
+            
+            const claseFoto = receta.foto ? 'con-foto' : '';
+            const htmlFoto = receta.foto ? `<img src="${receta.foto}" class="receta-foto" alt="Foto">` : '';
+
+            div.innerHTML = `
+                <div class="receta-header">
+                    <h3>${receta.titulo}</h3>
+                    <div class="receta-actions">
+                        <button class="btn-download" onclick="descargarPDF(${indiceReal})">Descargar PDF</button>
+                        <button class="btn-edit" onclick="cargarEdicion(${indiceReal})">Editar</button>
+                        <button class="btn-delete" onclick="eliminarReceta(${indiceReal})">Eliminar</button>
+                    </div>
+                </div>
+                <div class="receta-cuerpo ${claseFoto}">
+                    <div>
+                        <strong>Ingredientes:</strong>
+                        <div class="pre-line">${receta.ingredientes}</div>
+                        <strong>Procedimiento:</strong>
+                        <div class="pre-line">${receta.procedimiento}</div>
+                    </div>
+                    ${htmlFoto}
+                </div>
+            `;
+            listaRecetas.appendChild(div);
+        });
+    }
+
+    recetaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const index = parseInt(editIndexInput.value);
+        const archivoFoto = fotoInput.files[0];
+        let fotoBase64 = fotoTemporalBase64; 
+        
+        if (archivoFoto) {
+            if (archivoFoto.size > 1.5 * 1024 * 1024) {
+                alert("La foto es muy pesada. Elige una de menos de 1.5 MB.");
+                return;
+            }
+            fotoBase64 = await obtenerBase64(archivoFoto);
+        }
+
+        const datosReceta = {
+            titulo: document.getElementById('titulo').value,
+            ingredientes: document.getElementById('ingredientes').value,
+            procedimiento: document.getElementById('procedimiento').value,
+            foto: fotoBase64
+        };
+
+        if (index === -1) {
+            recetas.push(datosReceta);
+        } else {
+            recetas[index] = datosReceta;
+        }
+
+        try {
+            localStorage.setItem('recetas', JSON.stringify(recetas));
+        } catch (error) {
+            alert("Memoria saturada. Intenta borrar recetas viejas o subir imágenes más pequeñas.");
+            return;
+        }
+        
+        cancelarEdicion();
+        mostrarRecetas();
+    });
+
+    window.cargarEdicion = function(index) {
+        const receta = recetas[index];
+        document.getElementById('titulo').value = receta.titulo;
+        document.getElementById('ingredientes').value = receta.ingredientes;
+        document.getElementById('procedimiento').value = receta.procedimiento;
+        editIndexInput.value = index;
+        
+        fotoTemporalBase64 = receta.foto; 
+        previewContainer.textContent = receta.foto ? "Tiene una foto guardada (déjalo vacío si no deseas cambiarla)." : "Sin foto actual.";
+
+        formularioCard.classList.add('editando');
+        formTitulo.textContent = "Editar Receta";
+        btnSubmit.textContent = "Actualizar Cambios";
+        btnCancelar.style.display = "block";
+        formularioCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.cancelarEdicion = function() {
+        recetaForm.reset();
+        editIndexInput.value = "-1";
+        fotoTemporalBase64 = "";
+        previewContainer.textContent = "";
+        formularioCard.classList.remove('editando');
+        formTitulo.textContent = "Agregar Nueva Receta";
+        btnSubmit.textContent = "Guardar en mi Computadora";
+        btnCancelar.style.display = "none";
+    }
+
+    window.eliminarReceta = function(index) {
+        if(confirm('¿Estás seguro de que deseas eliminar esta receta?')) {
+            recetas.splice(index, 1);
+            localStorage.setItem('recetas', JSON.stringify(recetas));
+            if(parseInt(editIndexInput.value) === index) cancelarEdicion();
+            mostrarRecetas();
+        }
+    }
+
+    // MOTOR DE GENERACIÓN CON MÁRGENES DE ENCUADERNACIÓN VARIABLES
+    window.descargarPDF = function(index) {
+        const receta = recetas[index];
+        const pdfContainer = document.getElementById('pdfContainer');
+        const modoMargen = tipoMargenSelect.value;
+
+        // Configuración de márgenes dinámicos en milímetros [Arriba, Izquierda, Abajo, Derecha]
+        // Si elige encuadernar, dejamos 32mm a la izquierda (15mm de margen estándar + 17mm extras para el resorte)
+        let margenesFinales = [15, 15, 15, 15]; 
+        if (modoMargen === 'encuadernar') {
+            margenesFinales = [15, 32, 15, 12]; 
+        }
+
+        const pdfFotoHtml = receta.foto ? `
+            <div class="pdf-side-photo">
+                <img src="${receta.foto}" class="pdf-img" />
+            </div>
+        ` : '';
+
+        pdfContainer.innerHTML = `
+            <div id="pdfWrapper">
+                <div class="pdf-page">
+                    <h1 class="pdf-header-title">${receta.titulo}</h1>
+                    
+                    <div class="pdf-layout">
+                        <div class="pdf-main-content">
+                            <div class="pdf-seccion-titulo">INGREDIENTES</div>
+                            <p class="pdf-texto">${receta.ingredientes}</p>
+                            
+                            <div class="pdf-seccion-titulo">PROCEDIMIENTO</div>
+                            <p class="pdf-texto">${receta.procedimiento}</p>
+                        </div>
+                        ${pdfFotoHtml}
+                    </div>
+                    
+                    <div class="pdf-footer-text">
+                        WELCHEZ CAFÉ - TODOS LOS DERECHOS RESERVADOS
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const opciones = {
+            margin:       margenesFinales, // Inyección de los márgenes dinámicos calculados
+            filename:     `${receta.titulo.replace(/\s+/g, '_')}_WelchezCafe.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, logging: false, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().from(pdfContainer).set(opciones).save();
+    };
+
+    buscador.addEventListener('input', (e) => {
+        mostrarRecetas(e.target.value);
+    });
+
+    mostrarRecetas();
+</script>
+
+</body>
+</html>
