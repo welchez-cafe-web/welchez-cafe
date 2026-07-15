@@ -107,7 +107,6 @@
         }
         .btn-cancelar:hover { background-color: #616161; }
 
-        /* Controles superiores del listado */
         .controls-panel {
             display: grid;
             grid-template-columns: 1fr;
@@ -198,48 +197,59 @@
         }
 
         /* ===================================================
-           ESTILOS ADAPTATIVOS PARA GENERACIÓN DE PDF PERFECTO
+           ESTILOS FORZADOS PARA UNA SOLA PÁGINA Y LETRA NEGRITA
            =================================================== */
-        #pdfWrapper {
+        .pdf-box-unica {
             background: #ffffff;
-            font-family: Arial, sans-serif;
-            color: #333333;
-            padding: 0;
-            margin: 0;
-        }
-
-        .pdf-page {
-            width: 100%;
+            width: 216mm;  /* Ancho Carta */
+            height: 279mm; /* Alto Carta */
+            padding: 15mm;
             box-sizing: border-box;
-            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Empuja el copyright abajo */
+            font-family: Arial, sans-serif;
+            color: #111111;
+            overflow: hidden; /* Garantiza que nada se desborde a otra página */
         }
 
         .pdf-header-title {
             color: #5c3d2e;
             border-bottom: 3px solid #b85c38;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
             margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 26px;
+            margin-bottom: 15px;
+            font-size: 24px;
             text-transform: uppercase;
         }
 
-        .pdf-layout {
+        .pdf-layout-interior {
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            flex: 1;
+            min-height: 0; /* Permite la compresión flex interna */
         }
 
-        .pdf-main-content {
+        .pdf-columnas-texto {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .pdf-seccion-datos {
+            overflow: hidden;
         }
 
         .pdf-side-photo {
             width: 55mm;
+            flex-shrink: 0;
         }
 
         .pdf-img {
             width: 100%;
-            height: 50mm;
+            height: 45mm;
             object-fit: cover;
             border: 1px solid #bbbbbb;
             border-radius: 4px;
@@ -247,29 +257,30 @@
 
         .pdf-seccion-titulo {
             color: #b85c38;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
-            margin-bottom: 6px;
-            margin-top: 15px;
+            margin-bottom: 4px;
             border-bottom: 1px dashed #cccccc;
             padding-bottom: 2px;
             letter-spacing: 0.5px;
         }
 
-        .pdf-texto {
-            font-size: 12px;
-            line-height: 1.6;
+        /* Fuerza todo el texto a negrita y ajusta tamaño para hoja única */
+        .pdf-texto-negrita {
+            font-size: 11.5px;
+            line-height: 1.4;
             white-space: pre-line;
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
+            font-weight: bold; /* TODO EN NEGRITA */
+            color: #000000;
         }
 
         .pdf-footer-text {
             text-align: right;
             border-top: 1px solid #eeeeee;
             padding-top: 8px;
-            margin-top: 30px;
             font-size: 10px;
-            color: #555555;
+            color: #333333;
             font-weight: bold;
             letter-spacing: 1px;
         }
@@ -279,10 +290,8 @@
 
 <div class="container">
     <header>
-        <h1>Recetario Digital de WELCHEZ CAFE</h1>
+        <h1>Recetario Digital</h1>
         <p>Almacena, edita y diseña tus folletos o libros de cocina perfectamente</p>
-	<p>Nota: este es un editor para tu estacion de Trabajo</p>
-	<p>desing; by: Grevil Benitez</p>
     </header>
 
     <div class="grid">
@@ -336,7 +345,7 @@
     </div>
 </div>
 
-<!-- Contenedor Fantasma para procesar el PDF -->
+<!-- Contenedor de renderizado absoluto para capturar la hoja fija única -->
 <div style="position: absolute; left: -9999px; top: -9999px;">
     <div id="pdfContainer"></div>
 </div>
@@ -493,17 +502,16 @@
         }
     }
 
-    // MOTOR DE GENERACIÓN CON MÁRGENES DE ENCUADERNACIÓN VARIABLES
+    // NUEVO MOTOR SEGUIDOR DE PÁGINA ÚNICA CON CAJA RÍGIDA CARTA
     window.descargarPDF = function(index) {
         const receta = recetas[index];
         const pdfContainer = document.getElementById('pdfContainer');
         const modoMargen = tipoMargenSelect.value;
 
-        // Configuración de márgenes dinámicos en milímetros [Arriba, Izquierda, Abajo, Derecha]
-        // Si elige encuadernar, dejamos 32mm a la izquierda (15mm de margen estándar + 17mm extras para el resorte)
-        let margenesFinales = [15, 15, 15, 15]; 
+        // Estructura dinámica de espaciado según la encuadernación elegida
+        let estiloMargenExtra = "padding: 15mm;";
         if (modoMargen === 'encuadernar') {
-            margenesFinales = [15, 32, 15, 12]; 
+            estiloMargenExtra = "padding-top: 15mm; padding-bottom: 15mm; padding-right: 12mm; padding-left: 32mm;";
         }
 
         const pdfFotoHtml = receta.foto ? `
@@ -512,36 +520,40 @@
             </div>
         ` : '';
 
+        // Inyección de la estructura sellada .pdf-box-unica
         pdfContainer.innerHTML = `
-            <div id="pdfWrapper">
-                <div class="pdf-page">
+            <div class="pdf-box-unica" style="${estiloMargenExtra}">
+                <div>
                     <h1 class="pdf-header-title">${receta.titulo}</h1>
                     
-                    <div class="pdf-layout">
-                        <div class="pdf-main-content">
-                            <div class="pdf-seccion-titulo">INGREDIENTES</div>
-                            <p class="pdf-texto">${receta.ingredientes}</p>
+                    <div class="pdf-layout-interior">
+                        <div class="pdf-columnas-texto">
+                            <div class="pdf-seccion-datos">
+                                <div class="pdf-seccion-titulo">INGREDIENTES</div>
+                                <div class="pdf-texto-negrita">${receta.ingredientes}</div>
+                            </div>
                             
-                            <div class="pdf-seccion-titulo">PROCEDIMIENTO</div>
-                            <p class="pdf-texto">${receta.procedimiento}</p>
+                            <div class="pdf-seccion-datos">
+                                <div class="pdf-seccion-titulo">PROCEDIMIENTO</div>
+                                <div class="pdf-texto-negrita">${receta.procedimiento}</div>
+                            </div>
                         </div>
                         ${pdfFotoHtml}
                     </div>
-                    
-                    <div class="pdf-footer-text">
-                        WELCHEZ CAFÉ - TODOS LOS DERECHOS RESERVADOS
-                    </div>
+                </div>
+                
+                <div class="pdf-footer-text">
+                    WELCHEZ CAFÉ - TODOS LOS DERECHOS RESERVADOS
                 </div>
             </div>
         `;
 
         const opciones = {
-            margin:       margenesFinales, // Inyección de los márgenes dinámicos calculados
+            margin:       0, // El margen se gestiona de forma exacta desde el CSS interno para no alterar el tamaño
             filename:     `${receta.titulo.replace(/\s+/g, '_')}_WelchezCafe.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, logging: false, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' },
-            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
         };
 
         html2pdf().from(pdfContainer).set(opciones).save();
