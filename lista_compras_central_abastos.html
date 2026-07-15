@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de compras de la Central de Abastos CENTRO DE PRODUCCION - Welchez Café</title>
+    <style>
+        :root {
+            --primary-color: #4e342e;
+            --secondary-color: #8d6e63;
+            --bg-color: #fdfbf7;
+            --table-stripe: #f5f0eb;
+            --border-color: #d7ccc8;
+            --text-color: #2d1a15;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #efebe9;
+            color: var(--text-color);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .controls-panel {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: flex-end;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .btn-group { display: flex; gap: 10px; }
+        .btn {
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .btn-main { background-color: var(--primary-color); }
+        .btn-clear { background-color: #d32f2f; }
+        .btn-main:hover { background-color: var(--secondary-color); }
+        .btn-clear:hover { background-color: #b71c1c; }
+        
+        .sheet-container {
+            background-color: var(--bg-color);
+            width: 100%;
+            max-width: 1024px;
+            height: 750px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .header {
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        h1 { font-size: 1.4rem; color: var(--primary-color); text-transform: uppercase; }
+        .subtitle { font-size: 0.85rem; color: var(--secondary-color); font-weight: 600; }
+        .date-input { border: none; border-bottom: 1px dashed var(--secondary-color); background: transparent; width: 110px; outline: none; text-align: center; font-size: 0.9rem; }
+        
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            flex-grow: 1;
+        }
+        
+        table.list-table {
+            width: 100%;
+            border-collapse: collapse;
+            align-self: start;
+        }
+        table.list-table th { 
+            background-color: var(--primary-color); 
+            color: white; 
+            padding: 6px; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+        }
+        table.list-table td { 
+            border: 1px solid var(--border-color); 
+            padding: 2px 5px; 
+            height: 24px;
+        }
+        table.list-table tr:nth-child(even) td { background-color: var(--table-stripe); }
+        
+        tr.checked-row td { background-color: #e8e5e2 !important; color: #8d6e63; }
+        tr.checked-row input { text-decoration: line-through; color: #8d6e63; }
+        
+        .checkbox-cell { width: 30px; text-align: center; cursor: pointer; }
+        .custom-checkbox { width: 14px; height: 14px; border: 1.5px solid var(--secondary-color); border-radius: 3px; display: inline-block; position: relative; background: white; }
+        tr.checked-row .custom-checkbox { background-color: var(--secondary-color); }
+        tr.checked-row .custom-checkbox::after { content: "✓"; color: white; position: absolute; font-size: 10px; font-weight: bold; top: -3px; left: 1px; }
+        
+        .editable-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 2px 4px; outline: none; font-size: 0.82rem; color: inherit; }
+        .editable-input:focus { background: white; border-color: var(--secondary-color); }
+        
+        .qty-cell { width: 75px; }
+        
+        .footer-note { 
+            margin-top: 10px; 
+            padding: 8px 12px; 
+            background-color: #efebe9; 
+            border-left: 4px solid var(--secondary-color);
+            font-size: 0.85rem;
+        }
+        
+        @media print {
+            body { background-color: white; padding: 0; }
+            .controls-panel { display: none; }
+            .sheet-container { box-shadow: none; padding: 0; width: 100%; height: auto; }
+            @page {
+                size: letter portrait;
+                margin: 8mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls-panel">
+        <div class="btn-group">
+            <button class="btn btn-clear" onclick="clearList()">🧹 Limpiar Lista</button>
+            <button class="btn btn-main" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        </div>
+    </div>
+
+    <div class="sheet-container">
+        <div>
+            <div class="header">
+                <div><h1>Lista de compras de la Central de Abastos</h1><div class="subtitle">Centro de Producción • Welchez Café</div></div>
+                <div>FECHA: <input type="text" class="date-input" id="date-field"></div>
+            </div>
+            
+            <div class="tables-grid">
+                <!-- Column 1 -->
+                <table class="list-table">
+                    <thead><tr><th class="checkbox-cell">✓</th><th>PRODUCTO</th><th class="qty-cell">CANT.</th></tr></thead>
+                    <tbody id="tbody-left"></tbody>
+                </table>
+                
+                <!-- Column 2 -->
+                <table class="list-table">
+                    <thead><tr><th class="checkbox-cell">✓</th><th>PRODUCTO</th><th class="qty-cell">CANT.</th></tr></thead>
+                    <tbody id="tbody-right"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            <strong>Notas Adicionales:</strong>
+            <input type="text" style="width:100%; border:none; background:transparent; font-style:italic; font-size:0.85rem; outline:none;" placeholder="Escribe aquí notas sobre proveedores, calidad de la verdura, etc...">
+        </div>
+    </div>
+
+    <script>
+        const initialProducts = [
+            "CEBOLLA AMARILLA", "CAJAS DE TOMATE", "CHILES VERDES", "CHILES ROJOS", "CHILES MORRONES", 
+            "ZANAHORIA", "AJO", "CEBOLLA MORADA", "NARANJA VERDE", "MALANGA", "PAPAS", "PEREJIL", 
+            "MOSTAZA", "HABICHUELAS", "CULANTRO FINO", "APIO", "PATASTES", "COLIFLOR", "BROCOLI", 
+            "SEMILLA DE AYOTE", "AGUACATES", "JENGIBRE", "PIÑAS", "PEPINO", "LECHUGA NORMAL", 
+            "RABANO", "FRESAS", "LIMONES"
+        ];
+
+        const leftBody = document.getElementById('tbody-left');
+        const rightBody = document.getElementById('tbody-right');
+        
+        function generateRowHTML(productName) {
+            return `<td class="checkbox-cell" onclick="this.parentElement.classList.toggle('checked-row')"><div class="custom-checkbox"></div></td>
+                    <td><input type="text" class="editable-input" value="${productName}" placeholder="${productName===''?'.........................................................':''}"></td>
+                    <td class="qty-cell"><input type="text" class="editable-input" placeholder="..."></td>`;
+        }
+
+        // Keep the exact same clean formatting. 26 rows per side (total 52 available rows), easily fitting the 28 products + 24 extra blank spaces to fill on print!
+        const totalRowsPerSide = 26;
+        
+        for (let i = 0; i < totalRowsPerSide * 2; i++) {
+            const tr = document.createElement('tr');
+            const prod = initialProducts[i] || "";
+            tr.innerHTML = generateRowHTML(prod);
+            
+            if (i < totalRowsPerSide) {
+                leftBody.appendChild(tr);
+            } else {
+                rightBody.appendChild(tr);
+            }
+        }
+
+        document.getElementById('date-field').placeholder = new Date().toLocaleDateString('es-HN');
+
+        function clearList() {
+            if(confirm("¿Seguro que deseas borrar todas las cantidades y desmarcar todo?")) {
+                document.querySelectorAll('.qty-cell .editable-input').forEach(input => input.value = "");
+                document.querySelectorAll('tr').forEach(tr => tr.classList.remove('checked-row'));
+            }
+        }
+    </script>
+</body>
+</html>
