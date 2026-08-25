@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welchez Café - Traslado de Producto Terminado de Cocina</title>
-    <!-- Librería externa para habilitar la descarga como Imagen PNG -->
-    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=BngFbwlZQTn_3uq3MW4tT2nqXK0W4ATG2RZvAUY5phW7YdXTBo63SP02_vlRv_e7P3zy-PhkfZgggYn-xwOHIJ3AYTxlMaRHkLUroqj4Q7ctrCYlHAimeTd86HDh1rXFYR1NDaqJhdTYOC9BY50TeclvHuYoHo3Ixcu69NRyo28cyQj6RtDElYB2KXw26TbWgzXo4j0rt6Y9CqmFamyHpyz9Pczm661oe2iF06c47tg48K7ScsshDib1vsXOnhLwuBHLKTcGYEBUnyMAQZCYOHmPjW_aX1Y_HTJT7-hgnIdtho-49iZDt2J2p_8geSoiRo0zXTjRZuW6EgZmgUspnRPq4xWoDC6THDrg3k0vFMc" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jb250cmlidXRpb24tcnQudXNlcmNvbnRlbnQuZ29vZ2xlLmNvbS9kb3dubG9hZD9jPUNneGlZWEprWDNOMGIzSmhaMlVTVEJJSmRHVnRjRjlrWVhSaEdqOEtNRE00TXpWak4yVTVPRGN5T1dZelpqTXdNREEyTlRJMU4ySTJNalUyTWpJNU1EUTRPV0V6TnpWaU1ETXdaRFE0TmhJTEVnY1ExY0hGaF80RUdBRSZmaWxlbmFtZT10cmFzbGFkb19wcm9kdWN0b190ZXJtaW5hZG9fY29jaW5hLmh0bWwmb3BpPTEwMzEzNTA1MA"/><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Carga rápida de html2canvas mediante CDN oficial -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         * {
@@ -265,7 +266,6 @@
 </div>
 
 <script>
-    // Catálogo mapeado desde la imagen de cocina (Descripción -> Unidad de Medida)
     const catalogoCocina = {
         "POLLO P/CHILAQUILES EN PORCIONES  CP": "LBS",
         "PROSHUTTO EN PORCIONES CP": "LBS",
@@ -324,19 +324,19 @@
         "Overnight Piña Colada Oats": "UND",
         "Overnight Oats de Datil y Tahini ": "UND",
         "Snicker Overnight Oats ": "UND",
+        "CHILE MORRON ASADO ": "ONZ",
+        "AJO MOLIDO ": "LBS",
+        "SALSA DE CHILE MORRON ": "ONZ",
         "Overnight Oats Apple Pie": "UND",
     };
 
     window.onload = function() {
-        // Asignar fecha actual al traslado
         const fechaInput = document.getElementById('fecha');
         const hoy = new Date().toISOString().split('T')[0];
         fechaInput.value = hoy;
 
-        // Asignar fecha actual por defecto a la primera fila de elaboración
         document.querySelector('.fecha-elab').value = hoy;
         
-        // Poblar datalist con productos de cocina
         const datalist = document.getElementById('lista-productos-cocina');
         for (const producto in catalogoCocina) {
             const opt = document.createElement('option');
@@ -345,7 +345,6 @@
         }
     };
 
-    // Detectar producto y rellenar automáticamente la Unidad de Medida (U.M.)
     function actualizarUnidad(inputElement) {
         const fila = inputElement.closest('tr');
         const udmField = fila.querySelector('.udm-field');
@@ -353,10 +352,10 @@
 
         if (catalogoCocina[valor]) {
             udmField.value = catalogoCocina[valor];
-            udmField.readOnly = true; // Si es del catálogo, se bloquea la U.M.
+            udmField.readOnly = true;
         } else {
             udmField.value = ""; 
-            udmField.readOnly = false; // Si escribe un producto personalizado, permite ingresar libremente la U.M.
+            udmField.readOnly = false;
             udmField.placeholder = "Escriba U.M.";
         }
     }
