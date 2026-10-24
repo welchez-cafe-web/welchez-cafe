@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosco de Asistencia Biométrico & PIN - Con Marcaje Manual Admin</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        @keyframes scanLaser {
+            0% { top: 0%; opacity: 0.8; }
+            50% { top: 100%; opacity: 1; }
+            100% { top: 0%; opacity: 0.8; }
+        }
+
+        .scanner-laser {
+            animation: scanLaser 2s infinite ease-in-out;
+            box-shadow: 0 0 15px #3b82f6, 0 0 25px #3b82f6;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.08); opacity: 0.9; }
+        }
+
+        .fingerprint-glow {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-report, #printable-report * {
+                visibility: visible;
+            }
+            #printable-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: black;
+                background: white;
+                padding: 20px;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- TOP BAR: KIOSK HEADER -->
+    <header class="glass-card px-6 py-4 flex justify-between items-center z-20 border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600/20 p-3 rounded-2xl border border-blue-500/30 text-blue-400">
+                <i class="fa-solid fa-fingerprint text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide text-white flex items-center gap-2">
+                    KIOSCO BIOMÉTRICO <span class="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/30 font-medium">v3.0 Admin Plus</span>
+                </h1>
+                <p class="text-xs text-slate-400">Control de Asistencia en Pared con Marcaje Manual</p>
+            </div>
+        </div>
+
+        <div class="text-center bg-slate-900/80 px-5 py-2 rounded-2xl border border-slate-800 shadow-inner">
+            <div id="live-time" class="text-2xl font-black tracking-wider text-blue-400 font-mono">00:00:00</div>
+            <div id="live-date" class="text-xs text-slate-400 font-medium capitalize">Cargando fecha...</div>
+        </div>
+
+        <button onclick="openAdminModal()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold flex items-center gap-2 transition active:scale-95 shadow-lg">
+            <i class="fa-solid fa-user-shield text-blue-400"></i>
+            <span>Administración</span>
+        </button>
+    </header>
+
+    <!-- MAIN INTERFACE -->
+    <main class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 max-w-5xl mx-auto w-full relative z-10">
+        
+        <div class="mb-6 flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 shadow-xl w-full max-w-md">
+            <button id="btn-mode-in" onclick="setAttendanceMode('ENTRADA')" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-emerald-600 text-white shadow-lg shadow-emerald-900/30">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>ENTRADA</span>
+            </button>
+            <button id="btn-mode-out" onclick="setAttendanceMode('SALIDA')" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>SALIDA</span>
+            </button>
+        </div>
+
+        <div class="flex space-x-2 mb-6">
+            <button id="tab-finger" onclick="switchMethod('fingerprint')" class="px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40">
+                <i class="fa-solid fa-fingerprint mr-1.5"></i> Huella Digital
+            </button>
+            <button id="tab-pin" onclick="switchMethod('pin')" class="px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-keypad mr-1.5"></i> PIN de Empleado
+            </button>
+        </div>
+
+        <!-- CONTAINER: BIOMETRIC SCANNER -->
+        <div id="method-fingerprint" class="w-full flex flex-col items-center">
+            <div class="glass-card p-8 rounded-3xl border border-slate-800 flex flex-col items-center shadow-2xl relative overflow-hidden w-full max-w-sm text-center">
+                <p class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-4">Coloque su huella en el lector</p>
+                <div onclick="simulateFingerprintScan()" class="relative w-44 h-52 bg-slate-900/90 rounded-2xl border-2 border-blue-500/40 flex items-center justify-center cursor-pointer group hover:border-blue-400 transition duration-300 shadow-inner overflow-hidden my-2">
+                    <div class="absolute inset-0 bg-blue-500/10 fingerprint-glow rounded-2xl"></div>
+                    <i class="fa-solid fa-fingerprint text-8xl text-blue-500/70 group-hover:text-blue-400 group-hover:scale-105 transition duration-300"></i>
+                    <div id="scanner-bar" class="hidden absolute w-full h-1 bg-blue-400 scanner-laser"></div>
+                    <span class="absolute bottom-2 text-[10px] text-blue-400/80 font-mono tracking-tighter">TOCAR PARA ESCANEAR</span>
+                </div>
+                <div class="mt-4 flex flex-col items-center">
+                    <button onclick="simulateFingerprintScan()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-600/30 active:scale-95 transition flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-sensor-on"></i> Escanear Huella Ahora
+                    </button>
+                    <p class="text-[11px] text-slate-500 mt-3">Si tuvo algún problema, avise al administrador para un registro manual.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTAINER: PIN KEYPAD -->
+        <div id="method-pin" class="hidden w-full flex flex-col items-center">
+            <div class="glass-card p-6 rounded-3xl border border-slate-800 flex flex-col items-center shadow-2xl w-full max-w-sm">
+                <p class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Ingrese su PIN de 4 dígitos</p>
+                <div class="flex justify-center space-x-3 my-3">
+                    <div id="pin-dot-1" class="w-10 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xl font-bold text-blue-400"></div>
+                    <div id="pin-dot-2" class="w-10 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xl font-bold text-blue-400"></div>
+                    <div id="pin-dot-3" class="w-10 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xl font-bold text-blue-400"></div>
+                    <div id="pin-dot-4" class="w-10 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-xl font-bold text-blue-400"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 w-full max-w-[260px] my-2">
+                    <button onclick="appendPin('1')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">1</button>
+                    <button onclick="appendPin('2')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">2</button>
+                    <button onclick="appendPin('3')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">3</button>
+                    <button onclick="appendPin('4')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">4</button>
+                    <button onclick="appendPin('5')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">5</button>
+                    <button onclick="appendPin('6')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">6</button>
+                    <button onclick="appendPin('7')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">7</button>
+                    <button onclick="appendPin('8')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">8</button>
+                    <button onclick="appendPin('9')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">9</button>
+                    <button onclick="clearPin()" class="h-14 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 font-bold text-sm rounded-xl border border-rose-800/40 active:scale-90 transition flex items-center justify-center">BORRAR</button>
+                    <button onclick="appendPin('0')" class="h-14 bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xl rounded-xl border border-slate-700/60 active:scale-90 transition">0</button>
+                    <button onclick="submitPin()" class="h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl border border-emerald-500 active:scale-90 transition flex items-center justify-center">OK</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="glass-card px-6 py-3 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-400 gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Sistema Kiosco en Vivo (Almacenamiento Local Activo)</span>
+        </div>
+        <div class="flex space-x-4">
+            <span id="total-employees-count"><i class="fa-solid fa-users mr-1"></i> Empleados: 0</span>
+            <span id="today-records-count"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Marcajes Hoy: 0</span>
+        </div>
+    </footer>
+
+    <!-- SUCCESS MODAL -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div id="feedback-card" class="glass-card p-8 rounded-3xl border border-slate-700 max-w-md w-full flex flex-col items-center text-center transform transition-all duration-300 scale-95 opacity-0 shadow-2xl">
+            <div id="feedback-icon-bg" class="w-24 h-24 rounded-full flex items-center justify-center mb-4 text-4xl shadow-xl">
+                <i id="feedback-icon" class="fa-solid"></i>
+            </div>
+            <h2 id="feedback-title" class="text-2xl font-black text-white mb-1">¡Registro Exitoso!</h2>
+            <p id="feedback-subtitle" class="text-xs text-slate-400 mb-4">Procesado Correctamente</p>
+            <div class="bg-slate-900/90 w-full p-4 rounded-2xl border border-slate-800 mb-6 text-left space-y-2">
+                <div class="flex justify-between text-xs"><span class="text-slate-400">Empleado:</span><span id="fb-emp-name" class="font-bold text-white">---</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-400">Cargo:</span><span id="fb-emp-role" class="text-slate-300">---</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-400">Día y Fecha:</span><span id="fb-emp-date" class="font-mono text-blue-400">---</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-400">Hora Marcaje:</span><span id="fb-emp-time" class="font-mono font-bold text-emerald-400">---</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-400">Tipo / Método:</span><span id="fb-emp-type" class="text-slate-300">---</span></div>
+            </div>
+            <button onclick="closeFeedbackModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition">Continuar</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex flex-col p-4 md:p-8 overflow-y-auto no-scrollbar">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600/20 p-3 rounded-2xl border border-blue-500/30 text-blue-400">
+                    <i class="fa-solid fa-sliders text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-extrabold text-white">Panel de Administración de Asistencias</h2>
+                    <p class="text-xs text-slate-400">Gestión de Personal, Marcajes Manuales y Exportación de Reportes</p>
+                </div>
+            </div>
+            <button onclick="closeAdminModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 w-10 h-10 rounded-xl border border-slate-700 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- ADMIN LOGIN SCREEN -->
+        <div id="admin-auth-screen" class="flex-1 flex items-center justify-center">
+            <div class="glass-card p-8 rounded-3xl border border-slate-800 max-w-sm w-full text-center">
+                <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-500/30">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Acceso Administrativo</h3>
+                <p class="text-xs text-slate-400 mb-4">PIN por defecto: <code class="bg-slate-800 px-2 py-0.5 rounded text-blue-400 font-bold">9999</code></p>
+                <input type="password" id="admin-pin-input" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest bg-slate-900 border border-slate-700 rounded-xl py-3 text-white mb-4 focus:outline-none focus:border-blue-500 font-mono">
+                <button onclick="verifyAdminPin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg">Ingresar</button>
+            </div>
+        </div>
+
+        <!-- ADMIN CONTENT DASHBOARD -->
+        <div id="admin-dashboard" class="hidden space-y-6">
+            <div class="flex border-b border-slate-800 space-x-6">
+                <button id="admin-tab-reports" onclick="switchAdminTab('reports')" class="pb-3 font-bold text-sm text-blue-400 border-b-2 border-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice"></i> Reporte de Asistencia
+                </button>
+                <button id="admin-tab-staff" onclick="switchAdminTab('staff')" class="pb-3 font-bold text-sm text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i> Empleados y PINs
+                </button>
+            </div>
+
+            <!-- SECTION 1: CONSOLIDATED REPORT VIEW -->
+            <div id="admin-view-reports" class="space-y-6">
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1 font-semibold">Fecha Inicio</label>
+                            <input type="date" id="filter-date-start" onchange="renderReportTable()" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1 font-semibold">Fecha Fin</label>
+                            <input type="date" id="filter-date-end" onchange="renderReportTable()" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wider text-slate-400 mb-1 font-semibold">Buscar Empleado</label>
+                            <input type="text" id="filter-search-name" oninput="renderReportTable()" placeholder="Nombre..." class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 w-36">
+                        </div>
+                        <button onclick="resetFilters()" class="mt-4 text-xs text-slate-400 hover:text-white underline">Limpiar</button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+                        <button onclick="openManualEntryModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-user-pen"></i> + Marcaje Manual
+                        </button>
+                        <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-file-excel"></i> Excel / CSV
+                        </button>
+                        <button onclick="exportToPDF()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </button>
+                        <button onclick="exportToImage()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-file-image"></i> Imagen (JPG)
+                        </button>
+                        <button onclick="shareViaEmail()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-solid fa-envelope"></i> Correo
+                        </button>
+                        <button onclick="shareViaWhatsApp()" class="bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition shadow">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <div id="printable-report" class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                    <div class="p-4 bg-slate-900/80 border-b border-slate-800 flex justify-between items-center">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-blue-400"></i>
+                            <span>Reporte Unificado de Asistencia</span>
+                        </h3>
+                        <span id="report-rows-count" class="text-xs text-slate-400 font-mono">0 Registros</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider text-[11px] font-semibold border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3.5">Empleado</th>
+                                    <th class="p-3.5">Día y Fecha</th>
+                                    <th class="p-3.5 text-emerald-400">Hora Entrada</th>
+                                    <th class="p-3.5 text-rose-400">Hora Salida</th>
+                                    <th class="p-3.5">Método Entrada</th>
+                                    <th class="p-3.5">Método Salida</th>
+                                    <th class="p-3.5 text-right">Total Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-table-body" class="divide-y divide-slate-800/60 font-mono">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: STAFF MANAGEMENT -->
+            <div id="admin-view-staff" class="hidden space-y-6">
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+                    <h3 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-blue-400"></i>
+                        <span>Registrar Nuevo Empleado</span>
+                    </h3>
+                    <form onsubmit="handleAddEmployee(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="new-emp-name" placeholder="Nombre Completo" required class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                        <input type="text" id="new-emp-role" placeholder="Cargo / Departamento" required class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                        <input type="text" id="new-emp-pin" placeholder="PIN Único (4 dígitos)" maxlength="4" required class="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500 font-mono">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl p-3 transition shadow">Guardar Empleado</button>
+                    </form>
+                </div>
+
+                <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                    <div class="p-4 bg-slate-900/80 border-b border-slate-800">
+                        <h3 class="font-bold text-white text-sm">Lista de Empleados Activos</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider text-[10px]">
+                                <tr>
+                                    <th class="p-3">ID</th>
+                                    <th class="p-3">Nombre</th>
+                                    <th class="p-3">Cargo</th>
+                                    <th class="p-3">PIN Acceso</th>
+                                    <th class="p-3 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-table-body" class="divide-y divide-slate-800">
+                                <!-- Dynamic staff list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL: MARCAJE MANUAL POR ADMINISTRADOR -->
+    <div id="manual-entry-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card p-6 rounded-3xl border border-amber-500/30 max-w-md w-full">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-amber-400"></i>
+                    <span>Ajuste Manual por Administrador</span>
+                </h3>
+                <button onclick="closeManualEntryModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleManualEntrySubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Seleccionar Empleado:</label>
+                    <select id="manual-emp-select" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 focus:outline-none focus:border-amber-500">
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Tipo de Marcaje:</label>
+                        <select id="manual-type-select" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 focus:outline-none focus:border-amber-500 font-bold">
+                            <option value="ENTRADA">ENTRADA</option>
+                            <option value="SALIDA">SALIDA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Fecha del Registro:</label>
+                        <input type="date" id="manual-date-input" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Hora Exacta:</label>
+                    <input type="time" id="manual-time-input" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-3 focus:outline-none focus:border-amber-500 font-mono">
+                </div>
+
+                <p class="text-[11px] text-amber-400/90 bg-amber-950/30 p-2.5 rounded-xl border border-amber-800/40">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Este registro quedará auditado con el método <b>Manual (Administrador)</b>.
+                </p>
+
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeManualEntryModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl shadow-lg">Guardar Marcaje</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT APPLICATION LOGIC -->
+    <script>
+        const DEFAULT_EMPLOYEES = [
+            { id: "EMP-101", name: "Carlos Mendoza", role: "Supervisión", pin: "1234" },
+            { id: "EMP-102", name: "María Rodríguez", role: "Administración", pin: "5678" },
+            { id: "EMP-103", name: "Juan Orlando", role: "Operaciones", pin: "1111" },
+            { id: "EMP-104", name: "Ana Isabel Gómez", role: "Contabilidad", pin: "2222" }
+        ];
+
+        const DEFAULT_ATTENDANCE = [
+            {
+                id: "LOG-1",
+                empId: "EMP-101",
+                empName: "Carlos Mendoza",
+                role: "Supervisión",
+                type: "ENTRADA",
+                method: "Huella Digital",
+                timestamp: "2026-10-23T08:00:10",
+                dateStr: "2026-10-23",
+                dayOfWeek: "Viernes"
+            },
+            {
+                id: "LOG-2",
+                empId: "EMP-101",
+                empName: "Carlos Mendoza",
+                role: "Supervisión",
+                type: "SALIDA",
+                method: "Manual (Administrador)",
+                timestamp: "2026-10-23T17:05:22",
+                dateStr: "2026-10-23",
+                dayOfWeek: "Viernes"
+            }
+        ];
+
+        let employees = JSON.parse(localStorage.getItem("kiosk_employees")) || DEFAULT_EMPLOYEES;
+        let attendanceLogs = JSON.parse(localStorage.getItem("kiosk_logs")) || DEFAULT_ATTENDANCE;
+        
+        let currentMode = "ENTRADA";
+        let currentInputPin = "";
+        let isAdminAuthenticated = false;
+
+        const DAYS_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+            updateFooterStats();
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById("filter-date-start").value = todayStr;
+            document.getElementById("filter-date-end").value = todayStr;
+        });
+
+        function saveToStorage() {
+            localStorage.setItem("kiosk_employees", JSON.stringify(employees));
+            localStorage.setItem("kiosk_logs", JSON.stringify(attendanceLogs));
+            updateFooterStats();
+        }
+
+        function updateLiveClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById("live-time").innerText = `${hours}:${minutes}:${seconds}`;
+
+            const dayName = DAYS_ES[now.getDay()];
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById("live-date").innerText = `${dayName}, ${now.toLocaleDateString('es-ES', options)}`;
+        }
+
+        function updateFooterStats() {
+            document.getElementById("total-employees-count").innerHTML = `<i class="fa-solid fa-users mr-1"></i> Empleados: ${employees.length}`;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayCount = attendanceLogs.filter(l => l.dateStr === todayStr).length;
+            document.getElementById("today-records-count").innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-1"></i> Marcajes Hoy: ${todayCount}`;
+        }
+
+        function setAttendanceMode(mode) {
+            currentMode = mode;
+            const btnIn = document.getElementById("btn-mode-in");
+            const btnOut = document.getElementById("btn-mode-out");
+
+            if (mode === "ENTRADA") {
+                btnIn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-emerald-600 text-white shadow-lg shadow-emerald-900/30";
+                btnOut.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-slate-400 hover:text-white";
+            } else {
+                btnOut.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-rose-600 text-white shadow-lg shadow-rose-900/30";
+                btnIn.className = "flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-slate-400 hover:text-white";
+            }
+        }
+
+        function switchMethod(method) {
+            const tabFinger = document.getElementById("tab-finger");
+            const tabPin = document.getElementById("tab-pin");
+            const viewFinger = document.getElementById("method-fingerprint");
+            const viewPin = document.getElementById("method-pin");
+
+            if (method === "fingerprint") {
+                viewFinger.classList.remove("hidden");
+                viewPin.classList.add("hidden");
+                tabFinger.className = "px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40";
+                tabPin.className = "px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white";
+            } else {
+                viewPin.classList.remove("hidden");
+                viewFinger.classList.add("hidden");
+                tabPin.className = "px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40";
+                tabFinger.className = "px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition border border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white";
+                clearPin();
+            }
+        }
+
+        function simulateFingerprintScan() {
+            const scannerBar = document.getElementById("scanner-bar");
+            scannerBar.classList.remove("hidden");
+
+            setTimeout(() => {
+                scannerBar.classList.add("hidden");
+                const randomEmp = employees[Math.floor(Math.random() * employees.length)] || DEFAULT_EMPLOYEES[0];
+                registerClocking(randomEmp, "Huella Digital");
+            }, 1200);
+        }
+
+        function appendPin(digit) {
+            if (currentInputPin.length < 4) {
+                currentInputPin += digit;
+                updatePinDisplay();
+            }
+        }
+
+        function clearPin() {
+            currentInputPin = "";
+            updatePinDisplay();
+        }
+
+        function updatePinDisplay() {
+            for (let i = 1; i <= 4; i++) {
+                const dot = document.getElementById(`pin-dot-${i}`);
+                if (i <= currentInputPin.length) {
+                    dot.innerText = "•";
+                    dot.classList.add("border-blue-500", "bg-blue-950/40");
+                } else {
+                    dot.innerText = "";
+                    dot.classList.remove("border-blue-500", "bg-blue-950/40");
+                }
+            }
+        }
+
+        function submitPin() {
+            if (currentInputPin.length < 4) {
+                alert("Por favor ingrese su PIN de 4 dígitos.");
+                return;
+            }
+
+            const emp = employees.find(e => e.pin === currentInputPin);
+            if (emp) {
+                registerClocking(emp, "PIN Empleado");
+                clearPin();
+            } else {
+                speakMessage("PIN incorrecto.");
+                alert("❌ PIN no encontrado.");
+                clearPin();
+            }
+        }
+
+        function registerClocking(emp, method) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const dayOfWeek = DAYS_ES[now.getDay()];
+
+            const newRecord = {
+                id: "LOG-" + Date.now(),
+                empId: emp.id,
+                empName: emp.name,
+                role: emp.role,
+                type: currentMode,
+                method: method,
+                timestamp: now.toISOString(),
+                dateStr: dateStr,
+                dayOfWeek: dayOfWeek
+            };
+
+            attendanceLogs.unshift(newRecord);
+            saveToStorage();
+
+            speakMessage(`${currentMode} registrada con éxito para ${emp.name}`);
+            showFeedbackModal(emp, newRecord);
+        }
+
+        function speakMessage(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function showFeedbackModal(emp, record) {
+            const modal = document.getElementById("feedback-modal");
+            const card = document.getElementById("feedback-card");
+            const iconBg = document.getElementById("feedback-icon-bg");
+            const icon = document.getElementById("feedback-icon");
+
+            if (record.type === "ENTRADA") {
+                iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center mb-4 text-3xl shadow-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                icon.className = "fa-solid fa-right-to-bracket";
+                document.getElementById("feedback-title").innerText = "¡ENTRADA REGISTRADA!";
+            } else {
+                iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center mb-4 text-3xl shadow-xl bg-rose-500/20 text-rose-400 border border-rose-500/40";
+                icon.className = "fa-solid fa-right-from-bracket";
+                document.getElementById("feedback-title").innerText = "¡SALIDA REGISTRADA!";
+            }
+
+            const recDate = new Date(record.timestamp);
+            const formattedTime = recDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const formattedDate = `${record.dayOfWeek}, ${recDate.toLocaleDateString('es-ES')}`;
+
+            document.getElementById("fb-emp-name").innerText = emp.name;
+            document.getElementById("fb-emp-role").innerText = emp.role;
+            document.getElementById("fb-emp-date").innerText = formattedDate;
+            document.getElementById("fb-emp-time").innerText = formattedTime;
+            document.getElementById("fb-emp-type").innerText = `${record.type} (${record.method})`;
+
+            modal.classList.remove("hidden");
+            setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
+            setTimeout(() => closeFeedbackModal(), 4000);
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById("feedback-modal");
+            const card = document.getElementById("feedback-card");
+            card.classList.add("scale-95", "opacity-0");
+            setTimeout(() => modal.classList.add("hidden"), 200);
+        }
+
+        function openAdminModal() {
+            document.getElementById("admin-modal").classList.remove("hidden");
+            if (!isAdminAuthenticated) {
+                document.getElementById("admin-auth-screen").classList.remove("hidden");
+                document.getElementById("admin-dashboard").classList.add("hidden");
+            } else {
+                document.getElementById("admin-auth-screen").classList.add("hidden");
+                document.getElementById("admin-dashboard").classList.remove("hidden");
+                renderReportTable();
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById("admin-modal").classList.add("hidden");
+        }
+
+        function verifyAdminPin() {
+            const inputPin = document.getElementById("admin-pin-input").value;
+            if (inputPin === "9999") {
+                isAdminAuthenticated = true;
+                document.getElementById("admin-auth-screen").classList.add("hidden");
+                document.getElementById("admin-dashboard").classList.remove("hidden");
+                renderReportTable();
+                renderStaffTable();
+            } else {
+                alert("❌ PIN de administrador incorrecto.");
+                document.getElementById("admin-pin-input").value = "";
+            }
+        }
+
+        function switchAdminTab(tab) {
+            const btnReports = document.getElementById("admin-tab-reports");
+            const btnStaff = document.getElementById("admin-tab-staff");
+            const viewReports = document.getElementById("admin-view-reports");
+            const viewStaff = document.getElementById("admin-view-staff");
+
+            if (tab === "reports") {
+                viewReports.classList.remove("hidden");
+                viewStaff.classList.add("hidden");
+                btnReports.className = "pb-3 font-bold text-sm text-blue-400 border-b-2 border-blue-400 flex items-center gap-2";
+                btnStaff.className = "pb-3 font-bold text-sm text-slate-400 hover:text-white flex items-center gap-2";
+                renderReportTable();
+            } else {
+                viewStaff.classList.remove("hidden");
+                viewReports.classList.add("hidden");
+                btnStaff.className = "pb-3 font-bold text-sm text-blue-400 border-b-2 border-blue-400 flex items-center gap-2";
+                btnReports.className = "pb-3 font-bold text-sm text-slate-400 hover:text-white flex items-center gap-2";
+                renderStaffTable();
+            }
+        }
+
+        // --- MANAGE MANUAL ENTRY BY ADMIN ---
+        function openManualEntryModal() {
+            const select = document.getElementById("manual-emp-select");
+            select.innerHTML = "";
+
+            employees.forEach(e => {
+                const opt = document.createElement("option");
+                opt.value = e.id;
+                opt.innerText = `${e.name} (${e.role})`;
+                select.appendChild(opt);
+            });
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById("manual-date-input").value = todayStr;
+            document.getElementById("manual-time-input").value = "08:00";
+
+            document.getElementById("manual-entry-modal").classList.remove("hidden");
+        }
+
+        function closeManualEntryModal() {
+            document.getElementById("manual-entry-modal").classList.add("hidden");
+        }
+
+        function handleManualEntrySubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById("manual-emp-select").value;
+            const type = document.getElementById("manual-type-select").value;
+            const dateStr = document.getElementById("manual-date-input").value;
+            const timeStr = document.getElementById("manual-time-input").value;
+
+            const emp = employees.find(x => x.id === empId);
+            if (!emp) return;
+
+            const dateParts = dateStr.split('-');
+            const customDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            const dayOfWeek = DAYS_ES[customDate.getDay()];
+
+            const isoTimestamp = `${dateStr}T${timeStr}:00`;
+
+            const manualRecord = {
+                id: "MANUAL-" + Date.now(),
+                empId: emp.id,
+                empName: emp.name,
+                role: emp.role,
+                type: type,
+                method: "Manual (Administrador)",
+                timestamp: isoTimestamp,
+                dateStr: dateStr,
+                dayOfWeek: dayOfWeek
+            };
+
+            attendanceLogs.unshift(manualRecord);
+            saveToStorage();
+            renderReportTable();
+            closeManualEntryModal();
+
+            alert(`✅ Marcaje manual de ${type} guardado con éxito para ${emp.name}.`);
+        }
+
+        // --- GROUPING LOGIC FOR REPORT ---
+        function getGroupedReportData() {
+            const startDate = document.getElementById("filter-date-start").value;
+            const endDate = document.getElementById("filter-date-end").value;
+            const searchName = document.getElementById("filter-search-name").value.toLowerCase().trim();
+
+            const filteredLogs = attendanceLogs.filter(log => {
+                let matchesDate = true;
+                if (startDate) matchesDate = matchesDate && (log.dateStr >= startDate);
+                if (endDate) matchesDate = matchesDate && (log.dateStr <= endDate);
+                
+                let matchesName = true;
+                if (searchName) matchesName = log.empName.toLowerCase().includes(searchName);
+
+                return matchesDate && matchesName;
+            });
+
+            const groups = {};
+
+            filteredLogs.forEach(log => {
+                const key = `${log.empId}_${log.dateStr}`;
+                if (!groups[key]) {
+                    groups[key] = {
+                        empId: log.empId,
+                        empName: log.empName,
+                        role: log.role,
+                        dateStr: log.dateStr,
+                        dayOfWeek: log.dayOfWeek || "Día",
+                        inRecord: null,
+                        outRecord: null
+                    };
+                }
+
+                if (log.type === "ENTRADA") {
+                    if (!groups[key].inRecord || new Date(log.timestamp) < new Date(groups[key].inRecord.timestamp)) {
+                        groups[key].inRecord = log;
+                    }
+                } else if (log.type === "SALIDA") {
+                    if (!groups[key].outRecord || new Date(log.timestamp) > new Date(groups[key].outRecord.timestamp)) {
+                        groups[key].outRecord = log;
+                    }
+                }
+            });
+
+            return Object.values(groups).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+        }
+
+        function calculateWorkedHours(inTimeIso, outTimeIso) {
+            if (!inTimeIso || !outTimeIso) return "--";
+            const diffMs = new Date(outTimeIso) - new Date(inTimeIso);
+            if (diffMs <= 0) return "0h 0m";
+            const diffMins = Math.floor(diffMs / 60000);
+            const hrs = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            return `${hrs}h ${mins}m`;
+        }
+
+        function renderReportTable() {
+            const reportData = getGroupedReportData();
+            const tbody = document.getElementById("report-table-body");
+            tbody.innerHTML = "";
+
+            document.getElementById("report-rows-count").innerText = `${reportData.length} Filas Reportadas`;
+
+            if (reportData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500 italic">No se encontraron registros para el rango seleccionado.</td></tr>`;
+                return;
+            }
+
+            reportData.forEach(row => {
+                const inTime = row.inRecord ? new Date(row.inRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "--";
+                const outTime = row.outRecord ? new Date(row.outRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "<span class='text-amber-400 font-semibold'>En Turno</span>";
+                
+                const inMethod = row.inRecord ? row.inRecord.method : "--";
+                const outMethod = row.outRecord ? row.outRecord.method : "--";
+
+                const inBadge = inMethod.includes("Manual") ? `<span class="text-amber-400 font-bold"><i class="fa-solid fa-user-pen mr-1"></i>${inMethod}</span>` : inMethod;
+                const outBadge = outMethod.includes("Manual") ? `<span class="text-amber-400 font-bold"><i class="fa-solid fa-user-pen mr-1"></i>${outMethod}</span>` : outMethod;
+
+                const workedHours = calculateWorkedHours(row.inRecord?.timestamp, row.outRecord?.timestamp);
+                const dateFormatted = `${row.dayOfWeek}, ${row.dateStr}`;
+
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-800/40 transition";
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <div class="font-bold text-white">${row.empName}</div>
+                        <div class="text-[10px] text-slate-400">${row.role}</div>
+                    </td>
+                    <td class="p-3.5 font-sans font-medium text-slate-300">${dateFormatted}</td>
+                    <td class="p-3.5 text-emerald-400 font-bold">${inTime}</td>
+                    <td class="p-3.5 text-rose-400 font-bold">${outTime}</td>
+                    <td class="p-3.5 text-slate-300 text-[11px]">${inBadge}</td>
+                    <td class="p-3.5 text-slate-300 text-[11px]">${outBadge}</td>
+                    <td class="p-3.5 text-right font-bold text-blue-400">${workedHours}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById("filter-date-start").value = "";
+            document.getElementById("filter-date-end").value = "";
+            document.getElementById("filter-search-name").value = "";
+            renderReportTable();
+        }
+
+        function renderStaffTable() {
+            const tbody = document.getElementById("staff-table-body");
+            tbody.innerHTML = "";
+
+            employees.forEach(emp => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-slate-400">${emp.id}</td>
+                    <td class="p-3 font-bold text-white">${emp.name}</td>
+                    <td class="p-3 text-slate-300">${emp.role}</td>
+                    <td class="p-3 font-mono text-blue-400 font-bold">${emp.pin}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteEmployee('${emp.id}')" class="text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-950/30 border border-rose-800/50">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleAddEmployee(e) {
+            e.preventDefault();
+            const name = document.getElementById("new-emp-name").value.trim();
+            const role = document.getElementById("new-emp-role").value.trim();
+            const pin = document.getElementById("new-emp-pin").value.trim();
+
+            if (employees.some(emp => emp.pin === pin)) {
+                alert("⚠️ Este PIN ya está asignado a otro empleado.");
+                return;
+            }
+
+            const newEmp = {
+                id: "EMP-" + (100 + employees.length + 1),
+                name: name,
+                role: role,
+                pin: pin
+            };
+
+            employees.push(newEmp);
+            saveToStorage();
+            renderStaffTable();
+
+            document.getElementById("new-emp-name").value = "";
+            document.getElementById("new-emp-role").value = "";
+            document.getElementById("new-emp-pin").value = "";
+            alert("✅ Empleado agregado con éxito.");
+        }
+
+        function deleteEmployee(id) {
+            if (confirm("¿Está seguro de eliminar este empleado?")) {
+                employees = employees.filter(e => e.id !== id);
+                saveToStorage();
+                renderStaffTable();
+            }
+        }
+
+        // --- EXPORT FUNCTIONS ---
+        function exportToCSV() {
+            const reportData = getGroupedReportData();
+            if (reportData.length === 0) return alert("No hay registros.");
+
+            let csvContent = "\uFEFF";
+            csvContent += "EMPLEADO,CARGO,DIA Y FECHA,HORA ENTRADA,HORA SALIDA,METODO ENTRADA,METODO SALIDA,TOTAL HORAS\n";
+
+            reportData.forEach(row => {
+                const inTime = row.inRecord ? new Date(row.inRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "--";
+                const outTime = row.outRecord ? new Date(row.outRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "Pendiente";
+                const inMethod = row.inRecord ? row.inRecord.method : "--";
+                const outMethod = row.outRecord ? row.outRecord.method : "--";
+                const workedHours = calculateWorkedHours(row.inRecord?.timestamp, row.outRecord?.timestamp);
+                const dateFormatted = `${row.dayOfWeek} ${row.dateStr}`;
+
+                csvContent += `"${row.empName}","${row.role}","${dateFormatted}","${inTime}","${outTime}","${inMethod}","${outMethod}","${workedHours}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Reporte_Asistencia_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        function exportToImage() {
+            const reportData = getGroupedReportData();
+            if (reportData.length === 0) return alert("No hay datos para la imagen.");
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const width = 950;
+            const rowHeight = 40;
+            const headerHeight = 100;
+            const height = headerHeight + (reportData.length + 1) * rowHeight + 40;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 22px Inter, sans-serif";
+            ctx.fillText("REPORTE DE ASISTENCIA DE PERSONAL", 30, 45);
+
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "14px Inter, sans-serif";
+            ctx.fillText(`Generado el: ${new Date().toLocaleString('es-ES')}`, 30, 75);
+
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(30, headerHeight, width - 60, rowHeight);
+
+            ctx.fillStyle = "#38bdf8";
+            ctx.font = "bold 12px Inter, sans-serif";
+            ctx.fillText("EMPLEADO", 45, headerHeight + 25);
+            ctx.fillText("DÍA Y FECHA", 240, headerHeight + 25);
+            ctx.fillText("ENTRADA", 420, headerHeight + 25);
+            ctx.fillText("SALIDA", 510, headerHeight + 25);
+            ctx.fillText("MÉTODOS (ENTRADA / SALIDA)", 600, headerHeight + 25);
+            ctx.fillText("TOTAL", 840, headerHeight + 25);
+
+            let y = headerHeight + rowHeight;
+            ctx.font = "11px Inter, sans-serif";
+
+            reportData.forEach((row, idx) => {
+                ctx.fillStyle = idx % 2 === 0 ? "#1e293b" : "#0f172a";
+                ctx.fillRect(30, y, width - 60, rowHeight);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(row.empName.substring(0, 22), 45, y + 24);
+                
+                ctx.fillStyle = "#cbd5e1";
+                ctx.fillText(`${row.dayOfWeek.substring(0,3)}, ${row.dateStr}`, 240, y + 24);
+
+                const inTime = row.inRecord ? new Date(row.inRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "--";
+                const outTime = row.outRecord ? new Date(row.outRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "En turno";
+
+                ctx.fillStyle = "#34d399";
+                ctx.fillText(inTime, 420, y + 24);
+
+                ctx.fillStyle = "#f87171";
+                ctx.fillText(outTime, 510, y + 24);
+
+                ctx.fillStyle = "#94a3b8";
+                const inM = row.inRecord ? (row.inRecord.method.includes("Manual") ? "Manual (Admin)" : (row.inRecord.method.includes("Huella") ? "Huella" : "PIN")) : "--";
+                const outM = row.outRecord ? (row.outRecord.method.includes("Manual") ? "Manual (Admin)" : (row.outRecord.method.includes("Huella") ? "Huella" : "PIN")) : "--";
+                ctx.fillText(`${inM} / ${outM}`, 600, y + 24);
+
+                const workedHours = calculateWorkedHours(row.inRecord?.timestamp, row.outRecord?.timestamp);
+                ctx.fillStyle = "#60a5fa";
+                ctx.fillText(workedHours, 840, y + 24);
+
+                y += rowHeight;
+            });
+
+            const a = document.createElement("a");
+            a.download = `Reporte_Asistencia_${new Date().toISOString().split('T')[0]}.jpg`;
+            a.href = canvas.toDataURL("image/jpeg", 0.9);
+            a.click();
+        }
+
+        function shareViaEmail() {
+            const reportData = getGroupedReportData();
+            if (reportData.length === 0) return alert("No hay datos.");
+
+            let body = "REPORTE DE ASISTENCIA DE PERSONAL\n\n";
+            reportData.forEach(row => {
+                const inTime = row.inRecord ? new Date(row.inRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "--";
+                const outTime = row.outRecord ? new Date(row.outRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "Pendiente";
+                body += `- ${row.empName} | ${row.dayOfWeek} ${row.dateStr} | Entrada: ${inTime} (${row.inRecord?.method || '--'}) | Salida: ${outTime} (${row.outRecord?.method || '--'})\n`;
+            });
+
+            const mailtoUrl = `mailto:?subject=${encodeURIComponent("Reporte de Asistencia de Empleados")}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoUrl;
+        }
+
+        function shareViaWhatsApp() {
+            const reportData = getGroupedReportData();
+            if (reportData.length === 0) return alert("No hay datos.");
+
+            let text = "📋 *REPORTE DE ASISTENCIA DE PERSONAL*\n\n";
+            reportData.forEach(row => {
+                const inTime = row.inRecord ? new Date(row.inRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "--";
+                const outTime = row.outRecord ? new Date(row.outRecord.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : "Pendiente";
+                text += `👤 *${row.empName}*\n📅 ${row.dayOfWeek}, ${row.dateStr}\n🟢 Entrada: ${inTime} [${row.inRecord?.method || '--'}]\n🔴 Salida: ${outTime} [${row.outRecord?.method || '--'}]\n⏱️ Horas: ${calculateWorkedHours(row.inRecord?.timestamp, row.outRecord?.timestamp)}\n------------------------\n`;
+            });
+
+            const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(waUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
