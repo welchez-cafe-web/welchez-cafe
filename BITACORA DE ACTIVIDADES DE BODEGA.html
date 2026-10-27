@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de Actividades de Bodega</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for JPG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Styles specifically for Print / PDF export */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background-color: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .container-print {
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #cbd5e1 !important;
+                padding: 8px 12px !important;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+                color: #0f172a !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col justify-between p-3 sm:p-6">
+
+    <!-- Toast / Alert Notification Box -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50 bg-slate-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center space-x-3 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <span id="toastMsg" class="text-sm font-medium">Notificación</span>
+    </div>
+
+    <div class="max-w-5xl mx-auto w-full space-y-6">
+        
+        <!-- Header Section -->
+        <header class="bg-gradient-to-r from-slate-800 via-slate-900 to-blue-950 text-white p-6 rounded-2xl shadow-lg border-b-4 border-blue-500">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-md">
+                            <i class="fa-solid fa-boxes-packing text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Bitácora de actividades de bodega</h1>
+                            <p class="text-slate-300 text-xs sm:text-sm">Control e inventario diario de tiempos del personal</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- General Info Inputs (Colaborador) -->
+                <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 no-print flex flex-col sm:flex-row gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 font-medium mb-1">Nombre Colaborador</label>
+                        <input type="text" id="workerName" placeholder="Ej: Juan Pérez" class="w-full sm:w-48 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 font-medium mb-1">Área / Turno</label>
+                        <input type="text" id="workerArea" placeholder="Ej: Recepción / Mañana" class="w-full sm:w-40 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div id="exportableArea" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 container-print">
+            
+            <!-- Printed Header Info (Hidden on screen, visible on Print/Image Export) -->
+            <div class="hidden print-only mb-6 border-b pb-4">
+                <h1 class="text-2xl font-bold text-slate-900">Bitácora de actividades de bodega</h1>
+                <div class="mt-2 text-sm text-slate-600 flex justify-between">
+                    <p><strong>Colaborador:</strong> <span id="printWorkerName">--</span></p>
+                    <p><strong>Área / Turno:</strong> <span id="printWorkerArea">--</span></p>
+                    <p><strong>Fecha Reporte:</strong> <span id="printReportDate">--</span></p>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <section class="no-print mb-8 bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-blue-600"></i> Registrar Nueva Actividad
+                </h2>
+                <form id="activityForm" class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <!-- Fecha -->
+                    <div class="sm:col-span-3">
+                        <label for="date" class="block text-xs font-semibold text-slate-700 mb-1">Fecha *</label>
+                        <input type="date" id="date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                    </div>
+
+                    <!-- Nombre de la Actividad -->
+                    <div class="sm:col-span-6">
+                        <label for="activityName" class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la Actividad *</label>
+                        <input type="text" id="activityName" placeholder="Ej: Conteo e inventario en Pasillo B" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                    </div>
+
+                    <!-- Horas en la Actividad -->
+                    <div class="sm:col-span-3">
+                        <label for="hours" class="block text-xs font-semibold text-slate-700 mb-1">Horas dedicadas *</label>
+                        <input type="number" id="hours" step="0.1" min="0.1" max="24" placeholder="Ej: 2.5" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="sm:col-span-12 flex justify-end mt-2">
+                        <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm shadow-md transition flex items-center justify-center space-x-2 active:scale-95">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Guardar Actividad</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Table Section -->
+            <section>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-600"></i> Registros de la Bitácora
+                    </h2>
+                    <span id="totalHoursBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                        Total Horas: 0.0 hrs
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold">
+                            <tr>
+                                <th class="py-3 px-4 w-32">Fecha</th>
+                                <th class="py-3 px-4">Nombre de la Actividad</th>
+                                <th class="py-3 px-4 text-center w-36">Horas en la actividad</th>
+                                <th class="py-3 px-4 text-center w-24 no-print">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody" class="divide-y divide-slate-200 bg-white">
+                            <!-- Dynamic Content Inserted Here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State Message -->
+                <div id="emptyState" class="text-center py-12 px-4">
+                    <i class="fa-solid fa-clipboard-list text-slate-300 text-5xl mb-3"></i>
+                    <p class="text-slate-500 font-medium">No hay actividades registradas aún.</p>
+                    <p class="text-slate-400 text-xs mt-1">Usa el formulario superior para añadir nuevas tareas a la lista.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Toolbar / Action Buttons -->
+        <div class="no-print bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <!-- Export to PDF / Print -->
+                <button onclick="exportToPDF()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow">
+                    <i class="fa-solid fa-file-pdf text-red-400"></i>
+                    <span>Exportar / PDF</span>
+                </button>
+
+                <!-- Export to Excel -->
+                <button onclick="exportToExcel()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow">
+                    <i class="fa-solid fa-file-excel text-emerald-200"></i>
+                    <span>Excel (.csv)</span>
+                </button>
+
+                <!-- Export to JPG -->
+                <button onclick="exportToJPG()" class="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow">
+                    <i class="fa-solid fa-file-image text-amber-200"></i>
+                    <span>Imagen (JPG)</span>
+                </button>
+
+                <!-- Send via Email -->
+                <button onclick="sendByEmail()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 shadow">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Enviar Correo</span>
+                </button>
+            </div>
+
+            <!-- Clear Log -->
+            <button onclick="clearAllLogs()" class="w-full sm:w-auto text-rose-600 hover:bg-rose-50 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-rose-200 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Limpiar Bitácora</span>
+            </button>
+        </div>
+
+        <footer class="no-print text-center text-xs text-slate-400 py-2">
+            Sistema Local de Registro de Bodega &bull; Almacenamiento seguro en navegador
+        </footer>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Storage Key
+        const STORAGE_KEY = 'bodega_bitacora_data';
+        const WORKER_KEY = 'bodega_colaborador_data';
+
+        // State Array
+        let activities = [];
+
+        // DOM Elements
+        const form = document.getElementById('activityForm');
+        const dateInput = document.getElementById('date');
+        const nameInput = document.getElementById('activityName');
+        const hoursInput = document.getElementById('hours');
+        const tableBody = document.getElementById('activityTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const totalHoursBadge = document.getElementById('totalHoursBadge');
+        const workerNameInput = document.getElementById('workerName');
+        const workerAreaInput = document.getElementById('workerArea');
+
+        // Init App
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+
+            // Load preserved data
+            loadLocalStorage();
+            renderTable();
+
+            // Auto-save worker info on change
+            workerNameInput.addEventListener('input', saveWorkerData);
+            workerAreaInput.addEventListener('input', saveWorkerData);
+        });
+
+        // Load data from localStorage
+        function loadLocalStorage() {
+            const savedActivities = localStorage.getItem(STORAGE_KEY);
+            if (savedActivities) {
+                try {
+                    activities = JSON.parse(savedActivities);
+                } catch (e) {
+                    activities = [];
+                }
+            }
+
+            const savedWorker = localStorage.getItem(WORKER_KEY);
+            if (savedWorker) {
+                try {
+                    const data = JSON.parse(savedWorker);
+                    workerNameInput.value = data.name || '';
+                    workerAreaInput.value = data.area || '';
+                } catch (e) {}
+            }
+        }
+
+        // Save worker data
+        function saveWorkerData() {
+            const data = {
+                name: workerNameInput.value,
+                area: workerAreaInput.value
+            };
+            localStorage.setItem(WORKER_KEY, JSON.stringify(data));
+        }
+
+        // Save activities to localStorage
+        function saveLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
+        }
+
+        // Render Activity Table
+        function renderTable() {
+            tableBody.innerHTML = '';
+            let totalHours = 0;
+
+            if (activities.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                activities.forEach((item, index) => {
+                    const hrs = parseFloat(item.hours) || 0;
+                    totalHours += hrs;
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 transition';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">${formatDate(item.date)}</td>
+                        <td class="py-3 px-4 text-slate-800">${escapeHtml(item.name)}</td>
+                        <td class="py-3 px-4 text-center font-bold text-blue-600 whitespace-nowrap">${hrs.toFixed(1)} hrs</td>
+                        <td class="py-3 px-4 text-center no-print">
+                            <button onclick="deleteActivity(${index})" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition" title="Eliminar registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            totalHoursBadge.textContent = `Total Horas: ${totalHours.toFixed(1)} hrs`;
+        }
+
+        // Add New Activity
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newActivity = {
+                date: dateInput.value,
+                name: nameInput.value.trim(),
+                hours: parseFloat(hoursInput.value)
+            };
+
+            activities.push(newActivity);
+            saveLocalStorage();
+            renderTable();
+
+            // Reset name & hours, keep same date
+            nameInput.value = '';
+            hoursInput.value = '';
+            nameInput.focus();
+
+            showToast('Actividad guardada correctamente', 'success');
+        });
+
+        // Delete Individual Activity
+        function deleteActivity(index) {
+            activities.splice(index, 1);
+            saveLocalStorage();
+            renderTable();
+            showToast('Registro eliminado', 'info');
+        }
+
+        // Clear All Logs
+        function clearAllLogs() {
+            if (activities.length === 0) {
+                showToast('La bitácora ya está vacía', 'info');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de que deseas eliminar todas las actividades guardadas?')) {
+                activities = [];
+                saveLocalStorage();
+                renderTable();
+                showToast('Bitácora limpiada por completo', 'info');
+            }
+        }
+
+        // Export Functions
+        function preparePrintHeader() {
+            document.getElementById('printWorkerName').textContent = workerNameInput.value || 'No especificado';
+            document.getElementById('printWorkerArea').textContent = workerAreaInput.value || 'No especificado';
+            document.getElementById('printReportDate').textContent = new Date().toLocaleDateString('es-ES');
+        }
+
+        // Export to PDF / Print
+        function exportToPDF() {
+            if (activities.length === 0) {
+                showToast('No hay datos para exportar', 'warning');
+                return;
+            }
+            preparePrintHeader();
+            window.print();
+        }
+
+        // Export to Excel (CSV format compatibility)
+        function exportToExcel() {
+            if (activities.length === 0) {
+                showToast('No hay datos para exportar', 'warning');
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM for Spanish accents in Excel
+            csvContent += "Colaborador: " + (workerNameInput.value || "N/A") + "\n";
+            csvContent += "Area/Turno: " + (workerAreaInput.value || "N/A") + "\n";
+            csvContent += "Fecha de emision: " + new Date().toLocaleDateString('es-ES') + "\n\n";
+            csvContent += "Fecha;Nombre de la Actividad;Horas en la Actividad\n";
+
+            activities.forEach(item => {
+                const cleanName = item.name.replace(/;/g, ',');
+                csvContent += `${item.date};"${cleanName}";${item.hours}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Bitacora_Bodega_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('Archivo CSV/Excel generado', 'success');
+        }
+
+        // Export to JPG Image
+        function exportToJPG() {
+            if (activities.length === 0) {
+                showToast('No hay datos para exportar', 'warning');
+                return;
+            }
+
+            preparePrintHeader();
+            const exportElement = document.getElementById('exportableArea');
+            
+            // Show printed header temporarily for capture
+            const printHeader = exportElement.querySelector('.print-only');
+            printHeader.classList.remove('hidden');
+
+            showToast('Generando imagen JPG...', 'info');
+
+            html2canvas(exportElement, {
+                scale: 2,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                printHeader.classList.add('hidden'); // hide back
+                const link = document.createElement('a');
+                link.download = `Bitacora_Bodega_${new Date().toISOString().split('T')[0]}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                showToast('Imagen JPG descargada', 'success');
+            }).catch(err => {
+                printHeader.classList.add('hidden');
+                showToast('Error al generar la imagen', 'warning');
+            });
+        }
+
+        // Send by Email (mailto)
+        function sendByEmail() {
+            if (activities.length === 0) {
+                showToast('No hay actividades para enviar', 'warning');
+                return;
+            }
+
+            const worker = workerNameInput.value || 'Colaborador';
+            const area = workerAreaInput.value || 'Bodega';
+            let totalHrs = 0;
+
+            let bodyText = `BITÁCORA DE ACTIVIDADES DE BODEGA\n`;
+            bodyText += `Colaborador: ${worker}\n`;
+            bodyText += `Área / Turno: ${area}\n`;
+            bodyText += `Fecha del informe: ${new Date().toLocaleDateString('es-ES')}\n\n`;
+            bodyText += `RESUMEN DE ACTIVIDADES:\n`;
+            bodyText += `--------------------------------------------------\n`;
+
+            activities.forEach((item, idx) => {
+                const hrs = parseFloat(item.hours) || 0;
+                totalHrs += hrs;
+                bodyText += `${idx + 1}. [${item.date}] ${item.name} (${hrs} hrs)\n`;
+            });
+
+            bodyText += `--------------------------------------------------\n`;
+            bodyText += `TOTAL HORAS: ${totalHrs.toFixed(1)} hrs\n\n`;
+            bodyText += `Enviado desde el sistema de Bitácora de Bodega.`;
+
+            const subject = encodeURIComponent(`Bitácora de Actividades - ${worker} - ${new Date().toLocaleDateString('es-ES')}`);
+            const body = encodeURIComponent(bodyText);
+
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        // Helpers
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-green-400 text-lg';
+            } else if (type === 'warning') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
