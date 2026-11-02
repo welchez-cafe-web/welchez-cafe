@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Horarios y Turnos Laborales de WELCHEZ CAFE</title>
+    <title>Gestor de Turnos Laborales de WELCHEZ CAFE</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -13,18 +13,58 @@
     <!-- html2pdf.js (PDF Export) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* Estilos específicos para PDF e impresión */
+        /* Estilos específicos para PDF e impresión centrada y perfectamente ordenada */
         @media print {
             .no-print { display: none !important; }
-            body { background: white !important; font-size: 10pt; }
-            .print-shadow-none { box-shadow: none !important; border: 1px solid #e5e7eb !important; padding: 10px !important; }
-            .pdf-shift-text { display: block !important; text-align: center !important; font-size: 11px !important; font-weight: 600 !important; }
+            body { background: white !important; font-size: 9.5pt; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+            .print-shadow-none { box-shadow: none !important; border: none !important; padding: 5px !important; margin: 0 auto !important; width: 100% !important; max-width: 100% !important; }
+            
+            #printArea {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                table-layout: fixed !important;
+                margin: 0 auto !important;
+            }
+
+            /* Forzar celdas de la tabla con altura fija para garantizar centrado perfecto */
+            th, td {
+                padding: 4px 2px !important;
+                font-size: 7.5pt !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+                height: 38px !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            /* Contenedor exacto para centrado absoluto en la celda del día en PDF */
+            .pdf-shift-text {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
+                width: 100% !important;
+                height: 100% !important;
+                font-size: 7pt !important;
+                font-weight: 600 !important;
+                line-height: 1.1 !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                word-break: break-word !important;
+            }
+
             .pdf-select-box { display: none !important; }
         }
         
         .pdf-shift-text { display: none; }
 
-        /* Ajustes para centrado perfecto de celdas en PDF */
+        /* Ajustes para centrado perfecto de celdas en pantalla */
         th, td {
             text-align: center;
             vertical-align: middle;
@@ -40,22 +80,22 @@
     <header class="bg-indigo-900 text-white shadow-lg no-print">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <i data-lucide="calendar-range" class="w-8 h-8 text-indigo-300"></i>
+                <i data-lucide="coffee" class="w-8 h-8 text-amber-400"></i>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">Gestor de Turnos Laborales de WELCHEZ CAFE</h1>
-                    <p class="text-xs text-indigo-200">Herramienta para Control de sucursales, horarios, horas y descansos</p>
+                    <h1 class="text-xl font-bold tracking-tight">WELCHEZ CAFÉ - Gestor de Turnos y Horarios</h1>
+                    <p class="text-xs text-indigo-200">Control de Sucursales, 48h Legales, Vacaciones, Feriados y Horas Extras</p>
                 </div>
             </div>
             <!-- Acciones Principales -->
             <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openReportModal()" class="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    <i data-lucide="filter" class="w-4 h-4"></i> Reporte por Rango de Fechas
+                </button>
                 <button onclick="exportToExcel()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Exportar Excel
                 </button>
                 <button onclick="exportToPDF()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm">
                     <i data-lucide="file-text" class="w-4 h-4"></i> Descargar PDF
-                </button>
-                <button onclick="window.print()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
                 </button>
             </div>
         </div>
@@ -63,110 +103,101 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Panel de Configuración de la Sucursal e Información -->
+        <!-- Selector de Semanas Históricas (LocalStorage) y Configuración -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase">Seleccionar Semana para Editar</label>
+                    <select id="weekSelector" onchange="switchWeek(this.value)" class="text-sm font-medium px-3 py-1.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full md:w-64">
+                        <!-- Semanas cargadas dinámicamente -->
+                    </select>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                <button onclick="openNewWeekModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Nueva Semana
+                </button>
+                <button onclick="deleteCurrentWeekAction()" class="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-lg text-xs font-medium transition border border-rose-200" title="Eliminar semana seleccionada">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Eliminar Semana
+                </button>
+                <button onclick="openEmployeeManagerModal()" class="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-medium transition">
+                    <i data-lucide="users" class="w-4 h-4"></i> Catálogo Empleados
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de Configuración de la Sucursal y Turnos Dinámicos -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
             
-            <!-- Datos Generales del Horario y Sucursal -->
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
                 <h2 class="text-base font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                    <i data-lucide="building-2" class="w-5 h-5 text-indigo-600"></i> Datos del Horario
+                    <i data-lucide="building-2" class="w-5 h-5 text-indigo-600"></i> Datos de la Sucursal
                 </h2>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre de la Sucursal</label>
-                    <input type="text" id="branchName" value="Sucursal Central" oninput="saveGeneralInfo()" placeholder="Ej. Sucursal Norte" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="text" id="branchName" value="Welchez Café Central" oninput="saveGeneralInfo()" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Supervisor a Cargo</label>
                     <input type="text" id="supervisorName" value="Carlos Mendoza" oninput="saveGeneralInfo()" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Semana que inicia el (Lunes)</label>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Inicio de Semana (Lunes)</label>
                     <input type="date" id="startDate" onchange="updateDates()" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
             </div>
 
-            <!-- Edición Personalizada de Nombres y Horas de Turnos -->
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Configuración de Turnos
-                </h2>
-                <div class="space-y-2 text-xs">
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="shift1_name" value="Mañana" oninput="updateShiftConfig()" class="font-medium border rounded px-2 py-1 w-28">
-                        <input type="number" id="shift1_hours" value="8" oninput="updateShiftConfig()" class="border rounded px-2 py-1 w-16 text-center"> hrs
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="shift2_name" value="Tarde" oninput="updateShiftConfig()" class="font-medium border rounded px-2 py-1 w-28">
-                        <input type="number" id="shift2_hours" value="8" oninput="updateShiftConfig()" class="border rounded px-2 py-1 w-16 text-center"> hrs
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="shift3_name" value="Turno 8am - 4pm" oninput="updateShiftConfig()" class="font-medium border rounded px-2 py-1 w-28">
-                        <input type="number" id="shift3_hours" value="8" oninput="updateShiftConfig()" class="border rounded px-2 py-1 w-16 text-center"> hrs
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gestión de la Base de Datos de Empleados -->
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <!-- Panel de Turnos Dinámicos (Agregar, Editar y Eliminar) -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 md:col-span-2 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                        <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i> Agregar a Base de Datos
-                    </h2>
-                    <form onsubmit="addEmployeeToMasterDB(event)" class="flex gap-2 mb-3">
-                        <input type="text" id="newMasterEmpName" placeholder="Nuevo Empleado" required class="flex-1 text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Guardar
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Gestión de Turnos Oficiales
+                        </h2>
+                        <button onclick="openAddShiftModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuevo Turno
                         </button>
-                    </form>
+                    </div>
 
-                    <!-- Selección de Empleados Existentes para Agregar al Turno -->
-                    <div class="border-t pt-3">
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Asignar Empleado a este Horario</label>
-                        <div class="flex gap-2">
-                            <select id="selectEmpFromDB" class="flex-1 text-xs p-2 border rounded-lg focus:outline-none bg-white">
-                                <!-- Opciones cargadas dinámicamente de la BD -->
-                            </select>
-                            <button onclick="addSelectedEmpToSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition">
-                                Asignar
-                            </button>
-                        </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs max-h-48 overflow-y-auto" id="shiftConfigContainer">
+                        <!-- Turnos renderizados dinámicamente -->
                     </div>
                 </div>
 
-                <div class="mt-4 pt-2 border-t flex justify-between items-center text-xs">
-                    <button onclick="openEmployeeManagerModal()" class="text-indigo-600 font-semibold hover:underline flex items-center gap-1">
-                        <i data-lucide="settings" class="w-3.5 h-3.5"></i> Administrar BD Empleados
+                <div class="mt-4 pt-3 border-t flex justify-between items-center text-xs text-slate-500">
+                    <span>* Límite legal semanal: 48 horas. Turnos editables o eliminables según necesidad.</span>
+                    <button onclick="openAssignEmpModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Agregar Empleado a la Semana
                     </button>
-                    <button onclick="resetData()" class="text-rose-600 hover:underline">Reiniciar BD</button>
                 </div>
             </div>
 
         </div>
 
-        <!-- Documento de Horario (Área Imprimible / Exportable) -->
-        <div id="printArea" class="bg-white rounded-xl shadow-md border border-slate-200 p-6 print-shadow-none">
+        <!-- Documento de Horario (Área Imprimible / Exportable Centrada) -->
+        <div id="printArea" class="bg-white rounded-xl shadow-md border border-slate-200 p-6 print-shadow-none max-w-7xl mx-auto">
             
-            <!-- Encabezado Visible en Reporte/PDF -->
             <div class="border-b pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs uppercase font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100" id="displayBranch">Sucursal Central</span>
+                        <span class="text-xs uppercase font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100" id="displayBranch">Welchez Café Central</span>
                     </div>
-                    <h2 class="text-2xl font-bold text-slate-800 mt-1">Programación de Turnos Semanal</h2>
+                    <h2 class="text-2xl font-bold text-slate-800 mt-1">Programación de Turnos y Control Laboral</h2>
                     <p class="text-sm text-slate-500" id="displayPeriod">Semana del -- al --</p>
                 </div>
-                <div class="text-right border-l-0 sm:border-l sm:pl-4 border-slate-200">
+                <div class="text-right sm:pl-4 border-slate-200">
                     <span class="text-xs uppercase font-bold text-slate-400 block">Supervisor Responsable</span>
                     <span class="text-base font-semibold text-indigo-900" id="displaySupervisor">Carlos Mendoza</span>
                 </div>
             </div>
 
-            <!-- Tabla Principal de Horarios -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse" id="scheduleTable">
+            <!-- Tabla Principal de Horarios Centrada -->
+            <div class="overflow-x-auto flex justify-center">
+                <table class="w-full text-center border-collapse mx-auto" id="scheduleTable">
                     <thead>
                         <tr class="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b">
-                            <th class="p-3 text-left min-w-[170px]">Empleado</th>
+                            <th class="p-3 text-left min-w-[160px]">Empleado</th>
                             <th class="p-2 text-center" id="th-0">Lun<br><span class="text-[10px] text-slate-400 font-normal" id="d-0">-</span></th>
                             <th class="p-2 text-center" id="th-1">Mar<br><span class="text-[10px] text-slate-400 font-normal" id="d-1">-</span></th>
                             <th class="p-2 text-center" id="th-2">Mié<br><span class="text-[10px] text-slate-400 font-normal" id="d-2">-</span></th>
@@ -174,8 +205,10 @@
                             <th class="p-2 text-center" id="th-4">Vie<br><span class="text-[10px] text-slate-400 font-normal" id="d-4">-</span></th>
                             <th class="p-2 text-center" id="th-5">Sáb<br><span class="text-[10px] text-slate-400 font-normal" id="d-5">-</span></th>
                             <th class="p-2 text-center" id="th-6">Dom<br><span class="text-[10px] text-slate-400 font-normal" id="d-6">-</span></th>
-                            <th class="p-3 text-center min-w-[90px]">Total Horas</th>
-                            <th class="p-3 text-center min-w-[110px]">Día Descanso</th>
+                            <th class="p-3 text-center min-w-[75px]">Total Hrs</th>
+                            <th class="p-3 text-center min-w-[75px]" title="Calculadas sobre base de 48h">Hrs Extras</th>
+                            <th class="p-3 text-center min-w-[90px]" title="Editables por supervisor">Extras Eventos</th>
+                            <th class="p-3 text-center min-w-[90px]">Día Descanso</th>
                             <th class="p-2 text-center no-print w-10"></th>
                         </tr>
                     </thead>
@@ -185,70 +218,199 @@
                 </table>
             </div>
 
-            <!-- Leyenda al pie -->
-            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center text-xs text-slate-500 gap-4">
-                <div class="flex flex-wrap items-center gap-4">
-                    <span class="font-semibold text-slate-700">Leyenda:</span>
-                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span> Normal (&le;44h)</span>
-                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-rose-100 border border-rose-300"></span> Exceso de Horas (&gt;44h)</span>
-                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-100 border border-amber-300"></span> Descanso (OFF)</span>
+            <!-- Leyenda al pie con todos los turnos y estados visibles -->
+            <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-600 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-semibold text-slate-800">Leyenda de Turnos y Estados:</span>
+                    <div class="text-right">
+                        Firma Supervisor: ___________________________
+                    </div>
                 </div>
-                <div class="text-right">
-                    Firma Supervisor: ___________________________
+                <div class="flex flex-wrap items-center gap-2 pt-1" id="legendContainer">
+                    <!-- Leyenda dinámica de turnos -->
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- Modal de Gestión de Base de Datos de Empleados -->
+    <!-- Modal para Agregar/Editar Turno -->
+    <div id="shiftModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2" id="shiftModalTitle">
+                    <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Configurar Turno
+                </h3>
+                <button onclick="closeShiftModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <input type="hidden" id="shiftEditKey">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nombre del Turno (ej. Mañana 6am-2pm)</label>
+                <input type="text" id="shiftModalName" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Horas Laborales asignadas</label>
+                <input type="number" id="shiftModalHours" min="0" max="24" step="0.5" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeShiftModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                <button onclick="saveShiftModalAction()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Guardar Turno</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nueva Semana -->
+    <div id="newWeekModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i data-lucide="calendar-plus" class="w-5 h-5 text-indigo-600"></i> Crear Nueva Semana
+                </h3>
+                <button onclick="closeNewWeekModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha de Inicio (Lunes)</label>
+                <input type="date" id="newWeekDateInput" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeNewWeekModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                <button onclick="createNewWeekAction()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Crear y Activar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Asignar Empleado a la Semana -->
+    <div id="assignEmpModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i> Asignar Empleado
+                </h3>
+                <button onclick="closeAssignEmpModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Seleccionar de Catálogo General</label>
+                <select id="selectEmpFromDB" class="w-full text-sm p-2 border rounded-lg bg-white focus:outline-none">
+                    <!-- Dinámico -->
+                </select>
+            </div>
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeAssignEmpModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                <button onclick="addSelectedEmpToSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Asignar a Semana</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Catálogo General de Empleados -->
     <div id="empModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-                    <i data-lucide="users" class="w-5 h-5 text-indigo-600"></i> Base de Datos de Empleados
+                    <i data-lucide="users" class="w-5 h-5 text-indigo-600"></i> Catálogo General de Empleados
                 </h3>
-                <button onclick="closeEmployeeManagerModal()" class="text-slate-400 hover:text-slate-600">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="closeEmployeeManagerModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
-            <div class="max-h-60 overflow-y-auto divide-y divide-slate-100" id="modalEmpList">
-                <!-- Lista de empleados en BD -->
+            <form onsubmit="addEmployeeToMasterDB(event)" class="flex gap-2">
+                <input type="text" id="newMasterEmpName" placeholder="Nombre completo del empleado" required class="flex-1 text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Guardar
+                </button>
+            </form>
+
+            <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 border-t border-b py-2" id="modalEmpList">
+                <!-- Lista empleados -->
             </div>
 
-            <div class="pt-3 border-t text-right">
-                <button onclick="closeEmployeeManagerModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">
-                    Cerrar
+            <div class="pt-2 text-right">
+                <button onclick="closeEmployeeManagerModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Rango de Fecha para Reportes -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i data-lucide="calendar-range" class="w-5 h-5 text-amber-600"></i> Reporte Consolidado por Rango
+                </h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">Seleccione el período. El reporte sumará horas laboradas, faltas, vacaciones, feriados, incapacidades, emergencias (días y horas) y horas extras por empleado.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha Inicio</label>
+                    <input type="date" id="reportStartDate" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha Fin</label>
+                    <input type="date" id="reportEndDate" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+            </div>
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeReportModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                <button onclick="downloadRangeReportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel Rango
+                </button>
+                <button onclick="downloadRangeReportPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> PDF Rango
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Modal para ingresar Horas Parciales (Emergencia) -->
+    <div id="emergencyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4 no-print">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-purple-600"></i> Horas por Emergencia / Salida Parcial
+                </h3>
+                <button onclick="closeEmergencyModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-600">Indique cuántas horas efectivamente laboró el empleado antes de retirarse:</p>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Horas laboradas este día:</label>
+                <input type="number" id="emergencyHoursInput" min="0" max="16" step="0.5" class="w-full text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-center font-bold" value="4">
+            </div>
+            <div class="pt-3 border-t flex justify-end gap-2">
+                <button onclick="closeEmergencyModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                <button onclick="saveEmergencyHoursAction()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Guardar Horas</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Configuración de turnos por defecto
+        // Configuración de turnos con Diurno (8am - 4pm) incluido
         let shiftConfig = {
-            'T1': { name: 'Mañana', hours: 8 },
-            'T2': { name: 'Tarde', hours: 8 },
-            'T3': { name: 'Turno 8am - 4pm', hours: 8 },
-            'OFF': { name: 'Descanso', hours: 0 }
+            'T1': { name: 'Mañana (6am-2pm)', hours: 8 },
+            'T2': { name: 'Tarde (1pm-9pm)', hours: 8 },
+            'T3': { name: 'Diurno (8am-4pm)', hours: 8 },
+            'T4': { name: 'Apoyo A (8am-9pm)', hours: 13 },
+            'T5': { name: 'Apoyo B (9am-9pm)', hours: 12 },
+            'OFF': { name: 'Descanso (OFF)', hours: 0 },
+            'VACACIONES': { name: 'Vacaciones', hours: 0 },
+            'INCAPACITADO': { name: 'Incapacitado', hours: 0 },
+            'FERIADO': { name: 'Feriado', hours: 0 },
+            'F_INJUSTIFICADA': { name: 'Falta Injustificada', hours: 0 },
+            'F_INCAPACIDAD': { name: 'Falta x Incapacidad', hours: 0 }
         };
 
-        // Base de Datos Central de Empleados
         let masterEmployeeDB = [];
+        let weeksData = {}; 
+        let currentActiveWeekKey = '';
+        let emergencyModalContext = { empId: null, dayIndex: null };
 
-        // Empleados Asignados al Horario Actual
-        let currentScheduleEmployees = [];
-
-        // 1. CARGA DE BASE DE DATOS Y CONFIGURACIÓN
+        // 1. CARGA DE DATOS Y LOCALSTORAGE
         function loadDatabase() {
-            const savedMasterDB = localStorage.getItem('shift_master_employees');
-            const savedSchedule = localStorage.getItem('shift_current_schedule');
-            const savedShifts = localStorage.getItem('shift_app_config');
-            const savedSupervisor = localStorage.getItem('shift_app_supervisor');
-            const savedBranch = localStorage.getItem('shift_app_branch');
+            const savedMasterDB = localStorage.getItem('welchez_master_employees');
+            const savedWeeks = localStorage.getItem('welchez_weeks_data');
+            const savedActiveWeek = localStorage.getItem('welchez_active_week');
+            const savedShifts = localStorage.getItem('welchez_shift_config');
+            const savedSupervisor = localStorage.getItem('welchez_app_supervisor');
+            const savedBranch = localStorage.getItem('welchez_app_branch');
 
-            // Cargar BD Maestra de Empleados
             if (savedMasterDB) {
                 masterEmployeeDB = JSON.parse(savedMasterDB);
             } else {
@@ -261,193 +423,289 @@
                 saveMasterDB();
             }
 
-            // Cargar Empleados del Horario Semanal Activo
-            if (savedSchedule) {
-                currentScheduleEmployees = JSON.parse(savedSchedule);
-            } else {
-                currentScheduleEmployees = [
-                    { id: 1, name: 'Juan Pérez', schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'T1', 'OFF'] },
-                    { id: 2, name: 'María Rodríguez', schedule: ['T2', 'T2', 'T2', 'T2', 'T2', 'OFF', 'T2'] }
-                ];
-                saveCurrentSchedule();
-            }
-
-            // Cargar Configuración de Turnos
             if (savedShifts) {
                 shiftConfig = JSON.parse(savedShifts);
-                document.getElementById('shift1_name').value = shiftConfig['T1'].name;
-                document.getElementById('shift1_hours').value = shiftConfig['T1'].hours;
-                document.getElementById('shift2_name').value = shiftConfig['T2'].name;
-                document.getElementById('shift2_hours').value = shiftConfig['T2'].hours;
-                document.getElementById('shift3_name').value = shiftConfig['T3'].name;
-                document.getElementById('shift3_hours').value = shiftConfig['T3'].hours;
+            }
+
+            if (savedWeeks) {
+                weeksData = JSON.parse(savedWeeks);
+            } else {
+                const defaultMondayStr = getDefaultMondayString();
+                weeksData = {
+                    [defaultMondayStr]: {
+                        branch: 'Welchez Café Central',
+                        supervisor: 'Carlos Mendoza',
+                        employees: [
+                            { id: 1, name: 'Juan Pérez', schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF'], eventOvertime: 0 },
+                            { id: 2, name: 'María Rodríguez', schedule: ['T2', 'T2', 'T2', 'T2', 'T2', 'OFF', 'OFF'], eventOvertime: 2 }
+                        ]
+                    }
+                };
+                saveWeeksData();
+            }
+
+            if (savedActiveWeek && weeksData[savedActiveWeek]) {
+                currentActiveWeekKey = savedActiveWeek;
+            } else {
+                currentActiveWeekKey = Object.keys(weeksData)[0];
             }
 
             if (savedSupervisor) document.getElementById('supervisorName').value = savedSupervisor;
             if (savedBranch) document.getElementById('branchName').value = savedBranch;
 
-            populateSelectDB();
+            renderShiftConfigUI();
+            renderLegend();
+            populateWeekSelector();
+            loadActiveWeekToUI();
         }
 
-        // GUARDADO EN LOCALSTORAGE
+        function getDefaultMondayString() {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = (day === 0 ? -6 : 1 - day);
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + diff);
+            return monday.toISOString().split('T')[0];
+        }
+
         function saveMasterDB() {
-            localStorage.setItem('shift_master_employees', JSON.stringify(masterEmployeeDB));
-            populateSelectDB();
+            localStorage.setItem('welchez_master_employees', JSON.stringify(masterEmployeeDB));
         }
 
-        function saveCurrentSchedule() {
-            localStorage.setItem('shift_current_schedule', JSON.stringify(currentScheduleEmployees));
+        function saveWeeksData() {
+            localStorage.setItem('welchez_weeks_data', JSON.stringify(weeksData));
         }
 
         function saveShiftConfig() {
-            localStorage.setItem('shift_app_config', JSON.stringify(shiftConfig));
+            localStorage.setItem('welchez_shift_config', JSON.stringify(shiftConfig));
+            renderShiftConfigUI();
+            renderLegend();
+            renderTable();
         }
 
         function saveGeneralInfo() {
             const supervisor = document.getElementById('supervisorName').value;
             const branch = document.getElementById('branchName').value;
-            localStorage.setItem('shift_app_supervisor', supervisor);
-            localStorage.setItem('shift_app_branch', branch);
-            
+            localStorage.setItem('welchez_app_supervisor', supervisor);
+            localStorage.setItem('welchez_app_branch', branch);
+
+            if (weeksData[currentActiveWeekKey]) {
+                weeksData[currentActiveWeekKey].supervisor = supervisor;
+                weeksData[currentActiveWeekKey].branch = branch;
+                saveWeeksData();
+            }
+
             document.getElementById('displaySupervisor').innerText = supervisor || 'Sin Asignar';
             document.getElementById('displayBranch').innerText = branch || 'Sucursal Sin Nombre';
         }
 
-        function resetData() {
-            if (confirm("¿Estás seguro de reiniciar la Base de Datos? Se eliminarán todos los registros guardados.")) {
-                localStorage.clear();
-                location.reload();
-            }
+        // RENDERIZAR GESTIÓN DE TURNOS (AGREGAR, EDITAR, ELIMINAR)
+        function renderShiftConfigUI() {
+            const container = document.getElementById('shiftConfigContainer');
+            container.innerHTML = '';
+
+            Object.keys(shiftConfig).forEach(key => {
+                const shift = shiftConfig[key];
+                const div = document.createElement('div');
+                div.className = 'bg-slate-50 p-2.5 rounded-lg border flex flex-col justify-between';
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-indigo-900 text-xs truncate" title="${shift.name}">${shift.name}</span>
+                            <div class="flex items-center gap-1">
+                                <button onclick="openEditShiftModal('${key}')" class="text-indigo-600 hover:text-indigo-800 p-0.5" title="Editar Turno"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                                ${['T1','T2','T3','T4','T5','OFF'].includes(key) ? '' : `<button onclick="deleteShift('${key}')" class="text-rose-600 hover:text-rose-800 p-0.5" title="Eliminar Turno"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`}
+                            </div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-semibold">${shift.hours} horas</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
         }
 
-        // Llenar el <select> con los empleados de la Base de Datos
-        function populateSelectDB() {
-            const select = document.getElementById('selectEmpFromDB');
-            select.innerHTML = '';
+        function renderLegend() {
+            const container = document.getElementById('legendContainer');
+            container.innerHTML = '';
 
-            if (masterEmployeeDB.length === 0) {
-                select.innerHTML = '<option value="">(Base de datos vacía)</option>';
-                return;
-            }
+            Object.keys(shiftConfig).forEach(key => {
+                const shift = shiftConfig[key];
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs';
+                badge.innerHTML = `<span class="font-bold text-slate-700">${shift.name}:</span> <span class="text-slate-500">${shift.hours}h</span>`;
+                container.appendChild(badge);
+            });
 
-            masterEmployeeDB.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.id;
-                opt.innerText = emp.name;
-                select.appendChild(opt);
+            // Añadir estados especiales a la leyenda
+            const specialStates = [
+                { name: 'Normal', desc: '≤48h' },
+                { name: 'Exceso', desc: '>48h' },
+                { name: 'Emergencia Parcial', desc: 'Horas variables' }
+            ];
+            specialStates.forEach(st => {
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center gap-1 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded text-xs text-indigo-800';
+                badge.innerHTML = `<span class="font-semibold">${st.name}</span>`;
+                container.appendChild(badge);
             });
         }
 
-        // AGREGAR EMPLEADO A LA BASE DE DATOS MAESTRA
-        function addEmployeeToMasterDB(e) {
-            e.preventDefault();
-            const input = document.getElementById('newMasterEmpName');
-            const name = input.value.trim();
+        function openAddShiftModal() {
+            document.getElementById('shiftModalTitle').innerHTML = '<i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Agregar Nuevo Turno';
+            document.getElementById('shiftEditKey').value = '';
+            document.getElementById('shiftModalName').value = '';
+            document.getElementById('shiftModalHours').value = '8';
+            document.getElementById('shiftModal').classList.remove('hidden');
+            document.getElementById('shiftModal').classList.add('flex');
+        }
+
+        function openEditShiftModal(key) {
+            const shift = shiftConfig[key];
+            if (!shift) return;
+            document.getElementById('shiftModalTitle').innerHTML = '<i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Editar Turno';
+            document.getElementById('shiftEditKey').value = key;
+            document.getElementById('shiftModalName').value = shift.name;
+            document.getElementById('shiftModalHours').value = shift.hours;
+            document.getElementById('shiftModal').classList.remove('hidden');
+            document.getElementById('shiftModal').classList.add('flex');
+        }
+
+        function closeShiftModal() {
+            document.getElementById('shiftModal').classList.add('hidden');
+            document.getElementById('shiftModal').classList.remove('flex');
+        }
+
+        function saveShiftModalAction() {
+            const keyEdit = document.getElementById('shiftEditKey').value;
+            const name = document.getElementById('shiftModalName').value.trim();
+            const hours = parseFloat(document.getElementById('shiftModalHours').value) || 0;
             if (!name) return;
 
-            const newEmp = { id: Date.now(), name: name };
-            masterEmployeeDB.push(newEmp);
-            saveMasterDB();
+            if (keyEdit && shiftConfig[keyEdit]) {
+                shiftConfig[keyEdit].name = name;
+                shiftConfig[keyEdit].hours = hours;
+            } else {
+                const newKey = 'CUSTOM_' + Date.now();
+                shiftConfig[newKey] = { name, hours };
+            }
 
-            // También agregarlo directamente al horario actual
-            currentScheduleEmployees.push({
-                id: newEmp.id,
-                name: newEmp.name,
-                schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF']
-            });
-            saveCurrentSchedule();
-
-            input.value = '';
-            renderTable();
+            saveShiftConfig();
+            closeShiftModal();
         }
 
-        // ASIGNAR EMPLEADO EXISTENTE EN BD AL HORARIO DE LA SEMANA
-        function addSelectedEmpToSchedule() {
-            const select = document.getElementById('selectEmpFromDB');
-            const selectedId = parseInt(select.value);
-            if (!selectedId) return;
+        function deleteShift(key) {
+            if (confirm(`¿Estás seguro de eliminar este turno?`)) {
+                delete shiftConfig[key];
+                saveShiftConfig();
+            }
+        }
 
-            const empDB = masterEmployeeDB.find(e => e.id === selectedId);
-            if (!empDB) return;
+        function populateWeekSelector() {
+            const selector = document.getElementById('weekSelector');
+            selector.innerHTML = '';
 
-            // Verificar si ya está en la tabla de horarios actual
-            const exists = currentScheduleEmployees.some(e => e.id === selectedId);
-            if (exists) {
-                alert("Este empleado ya está asignado a la tabla de horarios actual.");
+            const keys = Object.keys(weeksData).sort();
+            keys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.innerText = `Semana del Lunes ${k}`;
+                if (k === currentActiveWeekKey) opt.selected = true;
+                selector.appendChild(opt);
+            });
+        }
+
+        function switchWeek(weekKey) {
+            if (weeksData[weekKey]) {
+                currentActiveWeekKey = weekKey;
+                localStorage.setItem('welchez_active_week', weekKey);
+                loadActiveWeekToUI();
+            }
+        }
+
+        function loadActiveWeekToUI() {
+            const weekObj = weeksData[currentActiveWeekKey];
+            if (!weekObj) return;
+
+            document.getElementById('startDate').value = currentActiveWeekKey;
+            document.getElementById('branchName').value = weekObj.branch || 'Welchez Café Central';
+            document.getElementById('supervisorName').value = weekObj.supervisor || 'Carlos Mendoza';
+
+            saveGeneralInfo();
+            updateDates();
+        }
+
+        function openNewWeekModal() {
+            document.getElementById('newWeekDateInput').value = getDefaultMondayString();
+            document.getElementById('newWeekModal').classList.remove('hidden');
+            document.getElementById('newWeekModal').classList.add('flex');
+        }
+
+        function closeNewWeekModal() {
+            document.getElementById('newWeekModal').classList.add('hidden');
+            document.getElementById('newWeekModal').classList.remove('flex');
+        }
+
+        function createNewWeekAction() {
+            const dateVal = document.getElementById('newWeekDateInput').value;
+            if (!dateVal) return;
+
+            if (weeksData[dateVal]) {
+                alert("Ya existe un registro para esta semana.");
                 return;
             }
 
-            currentScheduleEmployees.push({
-                id: empDB.id,
-                name: empDB.name,
-                schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF']
-            });
-
-            saveCurrentSchedule();
-            renderTable();
-        }
-
-        // EDITAR NOMBRE EN BASE DE DATOS
-        function editMasterEmpName(id) {
-            const emp = masterEmployeeDB.find(e => e.id === id);
-            if (!emp) return;
-
-            const newName = prompt("Editar nombre de empleado:", emp.name);
-            if (newName && newName.trim() !== "") {
-                emp.name = newName.trim();
-                saveMasterDB();
-
-                // Actualizar en el horario si está activo
-                const activeEmp = currentScheduleEmployees.find(e => e.id === id);
-                if (activeEmp) activeEmp.name = emp.name;
-                saveCurrentSchedule();
-
-                renderTable();
-                renderModalEmpList();
+            let baseEmployees = [];
+            if (weeksData[currentActiveWeekKey]) {
+                baseEmployees = weeksData[currentActiveWeekKey].employees.map(e => ({
+                    id: e.id,
+                    name: e.name,
+                    schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF'],
+                    eventOvertime: 0
+                }));
+            } else {
+                baseEmployees = masterEmployeeDB.map(e => ({
+                    id: e.id,
+                    name: e.name,
+                    schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF'],
+                    eventOvertime: 0
+                }));
             }
-        }
 
-        // ELIMINAR DE BASE DE DATOS MAESTRA
-        function deleteMasterEmp(id) {
-            if (confirm("¿Deseas eliminar permanentemente a este empleado de la Base de Datos?")) {
-                masterEmployeeDB = masterEmployeeDB.filter(e => e.id !== id);
-                saveMasterDB();
+            weeksData[dateVal] = {
+                branch: document.getElementById('branchName').value,
+                supervisor: document.getElementById('supervisorName').value,
+                employees: baseEmployees
+            };
 
-                // Quitar también del horario activo
-                currentScheduleEmployees = currentScheduleEmployees.filter(e => e.id !== id);
-                saveCurrentSchedule();
+            saveWeeksData();
+            currentActiveWeekKey = dateVal;
+            localStorage.setItem('welchez_active_week', dateVal);
 
-                renderTable();
-                renderModalEmpList();
-            }
-        }
-
-        // QUITAR EMPLEADO DEL HORARIO ACTUAL (Sin borrar de la BD)
-        function removeFromSchedule(id) {
-            currentScheduleEmployees = currentScheduleEmployees.filter(e => e.id !== id);
-            saveCurrentSchedule();
-            renderTable();
-        }
-
-        // FECHAS DEL CALENDARIO
-        function initCurrentWeek() {
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
-            const monday = new Date(now);
-            monday.setDate(now.getDate() + diffToMonday);
-            
-            document.getElementById('startDate').value = monday.toISOString().split('T')[0];
-            updateDates();
+            closeNewWeekModal();
+            populateWeekSelector();
+            loadActiveWeekToUI();
         }
 
         function updateDates() {
             const startVal = document.getElementById('startDate').value;
             if (!startVal) return;
 
+            if (startVal !== currentActiveWeekKey) {
+                if (weeksData[startVal]) {
+                    currentActiveWeekKey = startVal;
+                } else {
+                    weeksData[startVal] = weeksData[currentActiveWeekKey];
+                    delete weeksData[currentActiveWeekKey];
+                    currentActiveWeekKey = startVal;
+                }
+                saveWeeksData();
+                populateWeekSelector();
+                localStorage.setItem('welchez_active_week', currentActiveWeekKey);
+            }
+
             const startDate = new Date(startVal + 'T00:00:00');
             const options = { month: 'short', day: 'numeric' };
-
             let endDate = new Date(startDate);
             endDate.setDate(startDate.getDate() + 6);
 
@@ -463,98 +721,309 @@
             renderTable();
         }
 
-        function updateShiftConfig() {
-            shiftConfig['T1'].name = document.getElementById('shift1_name').value || 'Mañana';
-            shiftConfig['T1'].hours = parseFloat(document.getElementById('shift1_hours').value) || 0;
+        function openEmployeeManagerModal() {
+            renderModalEmpList();
+            document.getElementById('empModal').classList.remove('hidden');
+            document.getElementById('empModal').classList.add('flex');
+        }
 
-            shiftConfig['T2'].name = document.getElementById('shift2_name').value || 'Tarde';
-            shiftConfig['T2'].hours = parseFloat(document.getElementById('shift2_hours').value) || 0;
+        function closeEmployeeManagerModal() {
+            document.getElementById('empModal').classList.add('hidden');
+            document.getElementById('empModal').classList.remove('flex');
+        }
 
-            shiftConfig['T3'].name = document.getElementById('shift3_name').value || 'Turno 8am - 4pm';
-            shiftConfig['T3'].hours = parseFloat(document.getElementById('shift3_hours').value) || 0;
+        function renderModalEmpList() {
+            const container = document.getElementById('modalEmpList');
+            container.innerHTML = '';
+            if (masterEmployeeDB.length === 0) {
+                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No hay empleados registrados.</p>';
+                return;
+            }
+            masterEmployeeDB.forEach(emp => {
+                const div = document.createElement('div');
+                div.className = 'py-2 flex justify-between items-center text-sm';
+                div.innerHTML = `
+                    <span class="font-medium text-slate-700">${emp.name}</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="editMasterEmp(${emp.id})" class="text-indigo-600 hover:text-indigo-800 p-1"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="deleteMasterEmp(${emp.id})" class="text-rose-600 hover:text-rose-800 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
 
-            saveShiftConfig();
+        function addEmployeeToMasterDB(e) {
+            e.preventDefault();
+            const input = document.getElementById('newMasterEmpName');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const newId = Date.now();
+            masterEmployeeDB.push({ id: newId, name });
+            saveMasterDB();
+
+            if (weeksData[currentActiveWeekKey]) {
+                weeksData[currentActiveWeekKey].employees.push({
+                    id: newId,
+                    name,
+                    schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF'],
+                    eventOvertime: 0
+                });
+                saveWeeksData();
+            }
+
+            input.value = '';
+            renderModalEmpList();
             renderTable();
         }
 
-        function updateEmployeeSchedule(empId, dayIndex, shiftKey) {
-            const emp = currentScheduleEmployees.find(e => e.id === empId);
-            if (emp) {
-                emp.schedule[dayIndex] = shiftKey;
-                saveCurrentSchedule();
+        function editMasterEmp(id) {
+            const emp = masterEmployeeDB.find(e => e.id === id);
+            if (!emp) return;
+            const newName = prompt("Editar nombre:", emp.name);
+            if (newName && newName.trim() !== "") {
+                emp.name = newName.trim();
+                saveMasterDB();
+
+                Object.keys(weeksData).forEach(wk => {
+                    weeksData[wk].employees.forEach(e => {
+                        if (e.id === id) e.name = emp.name;
+                    });
+                });
+                saveWeeksData();
+                renderModalEmpList();
                 renderTable();
             }
         }
 
-        // RENDERIZAR TABLA DE HORARIOS
+        function deleteCurrentWeekAction() {
+            const keys = Object.keys(weeksData);
+            if (keys.length <= 1) {
+                alert("Debe existir al menos una semana registrada.");
+                return;
+            }
+            if (confirm(`¿Estás seguro de eliminar la semana con fecha de inicio ${currentActiveWeekKey}?`)) {
+                delete weeksData[currentActiveWeekKey];
+                saveWeeksData();
+                currentActiveWeekKey = Object.keys(weeksData)[0];
+                localStorage.setItem('welchez_active_week', currentActiveWeekKey);
+                populateWeekSelector();
+                loadActiveWeekToUI();
+            }
+        }
+
+        function deleteMasterEmp(id) {
+            if (confirm("¿Eliminar este empleado del catálogo y de las semanas?")) {
+                masterEmployeeDB = masterEmployeeDB.filter(e => e.id !== id);
+                saveMasterDB();
+
+                Object.keys(weeksData).forEach(wk => {
+                    weeksData[wk].employees = weeksData[wk].employees.filter(e => e.id !== id);
+                });
+                saveWeeksData();
+
+                renderModalEmpList();
+                renderTable();
+            }
+        }
+
+        function openAssignEmpModal() {
+            const select = document.getElementById('selectEmpFromDB');
+            select.innerHTML = '';
+            const weekEmps = weeksData[currentActiveWeekKey].employees.map(e => e.id);
+            const available = masterEmployeeDB.filter(e => !weekEmps.includes(e.id));
+
+            if (available.length === 0) {
+                select.innerHTML = '<option value="">(Todos los empleados ya están asignados)</option>';
+            } else {
+                available.forEach(e => {
+                    const opt = document.createElement('option');
+                    opt.value = e.id;
+                    opt.innerText = e.name;
+                    select.appendChild(opt);
+                });
+            }
+            document.getElementById('assignEmpModal').classList.remove('hidden');
+            document.getElementById('assignEmpModal').classList.add('flex');
+        }
+
+        function closeAssignEmpModal() {
+            document.getElementById('assignEmpModal').classList.add('hidden');
+            document.getElementById('assignEmpModal').classList.remove('flex');
+        }
+
+        function addSelectedEmpToSchedule() {
+            const select = document.getElementById('selectEmpFromDB');
+            const id = parseInt(select.value);
+            if (!id) return;
+            const emp = masterEmployeeDB.find(e => e.id === id);
+            if (!emp) return;
+
+            weeksData[currentActiveWeekKey].employees.push({
+                id: emp.id,
+                name: emp.name,
+                schedule: ['T1', 'T1', 'T1', 'T1', 'T1', 'OFF', 'OFF'],
+                eventOvertime: 0
+            });
+
+            saveWeeksData();
+            closeAssignEmpModal();
+            renderTable();
+        }
+
+        function removeFromSchedule(id) {
+            weeksData[currentActiveWeekKey].employees = weeksData[currentActiveWeekKey].employees.filter(e => e.id !== id);
+            saveWeeksData();
+            renderTable();
+        }
+
+        function updateEmployeeSchedule(empId, dayIndex, shiftKey) {
+            if (shiftKey === 'EMERGENCIA_PARCIAL') {
+                emergencyModalContext = { empId, dayIndex };
+                document.getElementById('emergencyHoursInput').value = '4';
+                document.getElementById('emergencyModal').classList.remove('hidden');
+                document.getElementById('emergencyModal').classList.add('flex');
+                return;
+            }
+
+            const weekObj = weeksData[currentActiveWeekKey];
+            const emp = weekObj.employees.find(e => e.id === empId);
+            if (emp) {
+                emp.schedule[dayIndex] = shiftKey;
+                saveWeeksData();
+                renderTable();
+            }
+        }
+
+        function closeEmergencyModal() {
+            document.getElementById('emergencyModal').classList.add('hidden');
+            document.getElementById('emergencyModal').classList.remove('flex');
+            renderTable();
+        }
+
+        function saveEmergencyHoursAction() {
+            const hours = parseFloat(document.getElementById('emergencyHoursInput').value) || 0;
+            const { empId, dayIndex } = emergencyModalContext;
+            const weekObj = weeksData[currentActiveWeekKey];
+            const emp = weekObj.employees.find(e => e.id === empId);
+            if (emp) {
+                emp.schedule[dayIndex] = `PARCIAL:${hours}`;
+                saveWeeksData();
+            }
+            closeEmergencyModal();
+        }
+
+        function updateEventOvertime(empId, value) {
+            const weekObj = weeksData[currentActiveWeekKey];
+            const emp = weekObj.employees.find(e => e.id === empId);
+            if (emp) {
+                emp.eventOvertime = parseFloat(value) || 0;
+                saveWeeksData();
+                renderTable();
+            }
+        }
+
         function renderTable() {
             saveGeneralInfo();
-
+            const weekObj = weeksData[currentActiveWeekKey];
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
+            if (!weekObj || !weekObj.employees) return;
+
             const daysNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-            currentScheduleEmployees.forEach(emp => {
+            weekObj.employees.forEach(emp => {
                 let totalHours = 0;
                 let restDays = [];
 
                 emp.schedule.forEach((shiftKey, idx) => {
-                    const shift = shiftConfig[shiftKey];
-                    totalHours += shift ? shift.hours : 0;
-                    if (shiftKey === 'OFF') {
-                        restDays.push(daysNames[idx]);
+                    if (shiftKey && shiftKey.startsWith('PARCIAL:')) {
+                        totalHours += parseFloat(shiftKey.split(':')[1]) || 0;
+                    } else {
+                        const shift = shiftConfig[shiftKey];
+                        totalHours += shift ? shift.hours : 0;
+                        if (shiftKey === 'OFF') restDays.push(daysNames[idx]);
                     }
                 });
 
-                const isOvertime = totalHours > 44;
+                const autoOvertime = totalHours > 48 ? (totalHours - 48) : 0;
+                const isOvertime = totalHours > 48;
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
 
-                // Nombre Empleado
                 let html = `<td class="p-3 font-medium text-slate-800 text-left">${emp.name}</td>`;
 
-                // Selects por día (con texto plano alternativo centrado para exportación/PDF)
                 emp.schedule.forEach((currentShift, dayIdx) => {
-                    const shiftObj = shiftConfig[currentShift];
-                    const shiftText = shiftObj ? shiftObj.name : currentShift;
+                    let shiftText = '';
+                    let isSpecial = false;
+                    let selectBg = '';
 
-                    html += `<td class="p-1 text-center align-middle">
-                        <div class="pdf-select-box">
+                    if (currentShift && currentShift.startsWith('PARCIAL:')) {
+                        const h = currentShift.split(':')[1];
+                        shiftText = `Emergencia (${h}h)`;
+                        isSpecial = true;
+                        selectBg = 'bg-purple-50 font-bold text-purple-700 border-purple-200';
+                    } else {
+                        const shiftObj = shiftConfig[currentShift];
+                        shiftText = shiftObj ? shiftObj.name : currentShift;
+                        if (currentShift === 'OFF') {
+                            selectBg = 'bg-amber-50 font-bold text-amber-700 border-amber-200';
+                        } else if (['VACACIONES', 'INCAPACITADO', 'FERIADO'].includes(currentShift)) {
+                            selectBg = 'bg-blue-50 font-bold text-blue-700 border-blue-200';
+                        } else if (['F_INJUSTIFICADA', 'F_INCAPACIDAD'].includes(currentShift)) {
+                            selectBg = 'bg-rose-50 font-bold text-rose-700 border-rose-200';
+                        } else if (currentShift && currentShift.startsWith('CUSTOM_')) {
+                            selectBg = 'bg-emerald-50 font-semibold text-emerald-800 border-emerald-200';
+                        }
+                    }
+
+                    let optionsHtml = '';
+                    Object.keys(shiftConfig).forEach(sKey => {
+                        const sObj = shiftConfig[sKey];
+                        optionsHtml += `<option value="${sKey}" ${currentShift === sKey ? 'selected' : ''}>${sObj.name}</option>`;
+                    });
+                    optionsHtml += `<option value="EMERGENCIA_PARCIAL" ${isSpecial ? 'selected' : ''}>⚡ Emergencia / Salida Parcial...</option>`;
+
+                    html += `<td class="p-1 text-center align-middle h-14 overflow-hidden">
+                        <div class="pdf-select-box w-full">
                             <select onchange="updateEmployeeSchedule(${emp.id}, ${dayIdx}, this.value)" 
-                                    class="w-full text-xs p-1.5 rounded border border-slate-200 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none text-center ${currentShift === 'OFF' ? 'bg-amber-50 font-bold text-amber-700 border-amber-200' : ''}">
-                                <option value="T1" ${currentShift === 'T1' ? 'selected' : ''}>${shiftConfig['T1'].name}</option>
-                                <option value="T2" ${currentShift === 'T2' ? 'selected' : ''}>${shiftConfig['T2'].name}</option>
-                                <option value="T3" ${currentShift === 'T3' ? 'selected' : ''}>${shiftConfig['T3'].name}</option>
-                                <option value="OFF" ${currentShift === 'OFF' ? 'selected' : ''}>OFF (Descanso)</option>
+                                    class="w-full text-xs p-1.5 rounded border border-slate-200 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none text-center ${selectBg}">
+                                ${optionsHtml}
                             </select>
                         </div>
-                        <!-- Texto plano visible en el PDF centrado -->
-                        <span class="pdf-shift-text ${currentShift === 'OFF' ? 'text-amber-700 font-bold' : ''}">${shiftText}</span>
+                        <div class="pdf-shift-text ${isSpecial ? 'text-purple-700 font-bold' : (currentShift === 'OFF' ? 'text-amber-700 font-bold' : '')}" style="box-sizing: border-box; width: 100%; text-align: center; justify-content: center; align-items: center;">
+                            ${shiftText}
+                        </div>
                     </td>`;
                 });
 
-                // Total Horas
                 const badgeClass = isOvertime 
                     ? 'bg-rose-100 text-rose-700 font-bold border border-rose-300' 
                     : 'bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200';
                 
                 html += `<td class="p-3 text-center align-middle">
-                    <span class="inline-block px-2.5 py-1 rounded-full text-xs ${badgeClass}">
-                        ${totalHours} hrs ${isOvertime ? '⚠️' : ''}
-                    </span>
+                    <span class="inline-block px-2.5 py-1 rounded-full text-xs ${badgeClass}">${totalHours} hrs</span>
                 </td>`;
 
-                // Días de Descanso
+                html += `<td class="p-3 text-center align-middle font-semibold text-xs text-indigo-700">
+                    ${autoOvertime} hrs
+                </td>`;
+
+                html += `<td class="p-2 text-center align-middle">
+                    <input type="number" min="0" step="0.5" value="${emp.eventOvertime || 0}" onchange="updateEventOvertime(${emp.id}, this.value)" class="w-16 text-center text-xs p-1 border rounded-lg bg-amber-50 font-semibold text-amber-800 border-amber-200 focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                </td>`;
+
                 const restDaysText = restDays.length > 0 ? restDays.join(', ') : 'Ninguno';
                 html += `<td class="p-3 text-center align-middle text-xs text-slate-600 font-medium">
                     <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded inline-block text-center">${restDaysText}</span>
                 </td>`;
 
-                // Acciones (Quitar del horario actual)
                 html += `<td class="p-2 text-center align-middle no-print">
-                    <button onclick="removeFromSchedule(${emp.id})" class="text-slate-400 hover:text-rose-600 transition" title="Quitar del horario semanal">
+                    <button onclick="removeFromSchedule(${emp.id})" class="text-slate-400 hover:text-rose-600 transition" title="Quitar de esta semana">
                         <i data-lucide="user-minus" class="w-4 h-4"></i>
                     </button>
                 </td>`;
@@ -566,79 +1035,244 @@
             lucide.createIcons();
         }
 
-        // MODAL DE ADMINISTRACIÓN DE BASE DE DATOS
-        function openEmployeeManagerModal() {
-            renderModalEmpList();
-            const modal = document.getElementById('empModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function openReportModal() {
+            const keys = Object.keys(weeksData).sort();
+            if (keys.length > 0) {
+                document.getElementById('reportStartDate').value = keys[0];
+                document.getElementById('reportEndDate').value = keys[keys.length - 1];
+            } else {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('reportStartDate').value = today;
+                document.getElementById('reportEndDate').value = today;
+            }
+            document.getElementById('reportModal').classList.remove('hidden');
+            document.getElementById('reportModal').classList.add('flex');
         }
 
-        function closeEmployeeManagerModal() {
-            const modal = document.getElementById('empModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+            document.getElementById('reportModal').classList.remove('flex');
         }
 
-        function renderModalEmpList() {
-            const container = document.getElementById('modalEmpList');
-            container.innerHTML = '';
+        function getFilteredWeeksData() {
+            const startStr = document.getElementById('reportStartDate').value;
+            const endStr = document.getElementById('reportEndDate').value;
+            if (!startStr || !endStr) return {};
 
-            if (masterEmployeeDB.length === 0) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No hay empleados guardados en la base de datos.</p>';
+            let filtered = {};
+            Object.keys(weeksData).forEach(wk => {
+                if (wk >= startStr && wk <= endStr) {
+                    filtered[wk] = weeksData[wk];
+                }
+            });
+            return filtered;
+        }
+
+        function computeRangeAggregates() {
+            const filtered = getFilteredWeeksData();
+            let employeeMap = {};
+
+            Object.keys(filtered).forEach(wk => {
+                const weekObj = filtered[wk];
+                weekObj.employees.forEach(emp => {
+                    if (!employeeMap[emp.name]) {
+                        employeeMap[emp.name] = {
+                            totalHours: 0,
+                            vacaciones: 0,
+                            feriados: 0,
+                            incapacitados: 0,
+                            emergenciasDias: 0,
+                            emergenciasHoras: 0,
+                            faltasInjustificadas: 0,
+                            incapacidadesMedicas: 0,
+                            autoOvertime: 0,
+                            eventOvertime: 0
+                        };
+                    }
+
+                    let weekTotalHours = 0;
+                    emp.schedule.forEach(shiftKey => {
+                        if (shiftKey && shiftKey.startsWith('PARCIAL:')) {
+                            const h = parseFloat(shiftKey.split(':')[1]) || 0;
+                            weekTotalHours += h;
+                            employeeMap[emp.name].emergenciasDias += 1;
+                            employeeMap[emp.name].emergenciasHoras += h;
+                        } else {
+                            const shift = shiftConfig[shiftKey];
+                            weekTotalHours += shift ? shift.hours : 0;
+                            if (shiftKey === 'VACACIONES') {
+                                employeeMap[emp.name].vacaciones += 1;
+                            } else if (shiftKey === 'FERIADO') {
+                                employeeMap[emp.name].feriados += 1;
+                            } else if (shiftKey === 'INCAPACITADO') {
+                                employeeMap[emp.name].incapacitados += 1;
+                            } else if (shiftKey === 'F_INJUSTIFICADA') {
+                                employeeMap[emp.name].faltasInjustificadas += 1;
+                            } else if (shiftKey === 'F_INCAPACIDAD') {
+                                employeeMap[emp.name].incapacidadesMedicas += 1;
+                            }
+                        }
+                    });
+
+                    const weekAutoOvertime = weekTotalHours > 48 ? (weekTotalHours - 48) : 0;
+                    employeeMap[emp.name].totalHours += weekTotalHours;
+                    employeeMap[emp.name].autoOvertime += weekAutoOvertime;
+                    employeeMap[emp.name].eventOvertime += (emp.eventOvertime || 0);
+                });
+            });
+
+            return employeeMap;
+        }
+
+        function downloadRangeReportExcel() {
+            const employeeMap = computeRangeAggregates();
+            const names = Object.keys(employeeMap);
+            if (names.length === 0) {
+                alert("No hay registros en el rango de fechas seleccionado.");
                 return;
             }
 
-            masterEmployeeDB.forEach(emp => {
-                const div = document.createElement('div');
-                div.className = 'py-2.5 flex justify-between items-center text-sm';
-                div.innerHTML = `
-                    <span class="font-medium text-slate-700">${emp.name}</span>
-                    <div class="flex items-center gap-2">
-                        <button onclick="editMasterEmpName(${emp.id})" class="text-indigo-600 hover:text-indigo-800 p-1" title="Editar Nombre">
-                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="deleteMasterEmp(${emp.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Eliminar de BD">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-            lucide.createIcons();
-        }
-
-        // EXPORTAR A EXCEL
-        function exportToExcel() {
-            const supervisor = document.getElementById('supervisorName').value;
-            const branch = document.getElementById('branchName').value;
-            const period = document.getElementById('displayPeriod').innerText;
-
             let data = [];
-            data.push(["PROGRAMACIÓN DE TURNOS LABORALES"]);
-            data.push(["Sucursal:", branch]);
-            data.push(["Supervisor:", supervisor]);
-            data.push(["Período:", period]);
+            data.push(["REPORTE CONSOLIDADO POR RANGO DE FECHAS - WELCHEZ CAFÉ"]);
+            data.push(["Período:", `${document.getElementById('reportStartDate').value} al ${document.getElementById('reportEndDate').value}`]);
             data.push([]);
 
-            data.push(["Empleado", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "Total Horas", "Alerta >44h", "Día(s) Descanso"]);
+            data.push(["Empleado", "Total Horas", "Vacac. (días)", "Feriados (días)", "Incap. (días)", "Emergencias (días)", "Emergencias (horas)", "Faltas Injust.", "Incap. Médica", "Extras (>48h)", "Extras Eventos", "Total Extras"]);
+
+            names.forEach(name => {
+                const item = employeeMap[name];
+                const totalExtras = item.autoOvertime + item.eventOvertime;
+                data.push([
+                    name,
+                    item.totalHours,
+                    item.vacaciones,
+                    item.feriados,
+                    item.incapacitados,
+                    item.emergenciasDias,
+                    item.emergenciasHoras,
+                    item.faltasInjustificadas,
+                    item.incapacidadesMedicas,
+                    item.autoOvertime,
+                    item.eventOvertime,
+                    totalExtras
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "ReporteConsolidado");
+            XLSX.writeFile(wb, `WelchezCafe_Consolidado_${document.getElementById('reportStartDate').value}_a_${document.getElementById('reportEndDate').value}.xlsx`);
+            closeReportModal();
+        }
+
+        function downloadRangeReportPDF() {
+            const employeeMap = computeRangeAggregates();
+            const names = Object.keys(employeeMap);
+            if (names.length === 0) {
+                alert("No hay registros en el rango de fechas seleccionado.");
+                return;
+            }
+
+            let htmlContent = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b; max-width: 1050px; margin: 0 auto; text-align: center;">
+                    <h2 style="color: #312e81; margin-bottom: 5px; font-size: 20px;">WELCHEZ CAFÉ - REPORTE CONSOLIDADO</h2>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Período del ${document.getElementById('reportStartDate').value} al ${document.getElementById('reportEndDate').value}</p>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin: 0 auto; font-size: 10.5px; text-align: center;">
+                        <thead>
+                            <tr style="background-color: #312e81; color: #ffffff;">
+                                <th style="padding: 7px; text-align: left; border: 1px solid #cbd5e1;">Empleado</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Total Hrs</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Vacac.</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Feriados</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Incap.</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Emerg. (Días/Hrs)</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Faltas</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Extras >48h</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Extras Ev.</th>
+                                <th style="padding: 7px; border: 1px solid #cbd5e1;">Total Extras</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            names.forEach(name => {
+                const item = employeeMap[name];
+                const totalExtras = item.autoOvertime + item.eventOvertime;
+                htmlContent += `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 7px; text-align: left; font-weight: 600; border: 1px solid #cbd5e1;">${name}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.totalHours}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.vacaciones}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.feriados}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.incapacitados}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.emergenciasDias} días (${item.emergenciasHoras}h)</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.faltasInjustificadas + item.incapacidadesMedicas}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.autoOvertime}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1;">${item.eventOvertime}</td>
+                        <td style="padding: 7px; border: 1px solid #cbd5e1; font-weight: bold; color: #4338ca;">${totalExtras}</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+                        <span>Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}</span>
+                        <span>Firma Supervisor: ___________________________</span>
+                    </div>
+                </div>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<html><head><title>Reporte Consolidado Welchez Café</title></head><body>${htmlContent}</body></html>`);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+            closeReportModal();
+        }
+
+        function exportToExcel() {
+            const weekObj = weeksData[currentActiveWeekKey];
+            if (!weekObj) return;
+
+            let data = [];
+            data.push(["PROGRAMACIÓN DE TURNOS Y CONTROL LABORAL - WELCHEZ CAFÉ"]);
+            data.push(["Sucursal:", weekObj.branch]);
+            data.push(["Supervisor:", weekObj.supervisor]);
+            data.push(["Semana (Lunes):", currentActiveWeekKey]);
+            data.push([]);
+
+            data.push(["Empleado", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "Total Horas", "Hrs Extras (>48h)", "Extras Eventos", "Día(s) Descanso"]);
 
             const daysNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-            currentScheduleEmployees.forEach(emp => {
+            weekObj.employees.forEach(emp => {
                 let totalHours = 0;
                 let restDays = [];
                 let row = [emp.name];
 
                 emp.schedule.forEach((shiftKey, idx) => {
-                    const shift = shiftConfig[shiftKey];
-                    row.push(shift ? shift.name : shiftKey);
-                    totalHours += shift ? shift.hours : 0;
-                    if (shiftKey === 'OFF') restDays.push(daysNames[idx]);
+                    if (shiftKey && shiftKey.startsWith('PARCIAL:')) {
+                        const h = parseFloat(shiftKey.split(':')[1]) || 0;
+                        row.push(`Emergencia (${h}h)`);
+                        totalHours += h;
+                    } else {
+                        const shift = shiftConfig[shiftKey];
+                        row.push(shift ? shift.name : shiftKey);
+                        totalHours += shift ? shift.hours : 0;
+                        if (shiftKey === 'OFF') restDays.push(daysNames[idx]);
+                    }
                 });
 
+                const autoOvertime = totalHours > 48 ? (totalHours - 48) : 0;
                 row.push(totalHours);
-                row.push(totalHours > 44 ? "EXCESO DE HORAS" : "NORMAL");
+                row.push(autoOvertime);
+                row.push(emp.eventOvertime || 0);
                 row.push(restDays.join(', ') || 'Ninguno');
 
                 data.push(row);
@@ -646,37 +1280,81 @@
 
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Horarios");
-            XLSX.writeFile(wb, `Horario_${branch.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "HorarioSemanal");
+            XLSX.writeFile(wb, `WelchezCafe_Turnos_${currentActiveWeekKey}.xlsx`);
         }
 
-        // EXPORTAR A PDF (Con centrado perfecto en casillas)
         function exportToPDF() {
-            // Activar temporalmente clases de texto estático centrado
-            document.querySelectorAll('.pdf-shift-text').forEach(el => el.style.display = 'block');
-            document.querySelectorAll('.pdf-select-box').forEach(el => el.style.display = 'none');
-
             const element = document.getElementById('printArea');
-            const branch = document.getElementById('branchName').value || 'Sucursal';
+
+            // 1. Mostrar textos centrados y formateados para el PDF
+            document.querySelectorAll('.pdf-shift-text').forEach(el => {
+                el.style.display = 'block';
+                el.style.textAlign = 'center';
+                el.style.fontSize = '6.8pt';
+                el.style.lineHeight = '1.1';
+                el.style.wordBreak = 'break-word';
+                el.style.overflowWrap = 'break-word';
+                el.style.maxWidth = '100%';
+                el.style.padding = '2px';
+                el.style.margin = '0 auto';
+            });
+
+            // Ocultar selects
+            document.querySelectorAll('.pdf-select-box').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            // 2. Fijar dimensiones de tabla y celdas para evitar desbordes
+            const table = document.getElementById('scheduleTable');
+            const prevTableLayout = table.style.tableLayout;
+            table.style.tableLayout = 'fixed';
+            table.style.width = '100%';
+
+            const allCells = table.querySelectorAll('th, td');
+            allCells.forEach(cell => {
+                cell.style.verticalAlign = 'middle';
+                cell.style.textAlign = 'center';
+                cell.style.padding = '3px 1px';
+            });
+
             const opt = {
-                margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     `Horario_${branch.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                margin:       [0.2, 0.2, 0.2, 0.2],
+                filename:     `WelchezCafe_Turnos_${currentActiveWeekKey}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
             };
 
             html2pdf().set(opt).from(element).save().then(() => {
-                // Restaurar selects después de la generación
-                document.querySelectorAll('.pdf-shift-text').forEach(el => el.style.display = 'none');
-                document.querySelectorAll('.pdf-select-box').forEach(el => el.style.display = 'block');
+                // Restaurar vista web tras la generación
+                document.querySelectorAll('.pdf-shift-text').forEach(el => {
+                    el.style.display = 'none';
+                    el.style.textAlign = '';
+                    el.style.fontSize = '';
+                    el.style.lineHeight = '';
+                    el.style.wordBreak = '';
+                    el.style.overflowWrap = '';
+                    el.style.maxWidth = '';
+                    el.style.padding = '';
+                    el.style.margin = '';
+                });
+
+                document.querySelectorAll('.pdf-select-box').forEach(el => {
+                    el.style.display = 'block';
+                });
+
+                table.style.tableLayout = prevTableLayout;
+                allCells.forEach(cell => {
+                    cell.style.verticalAlign = '';
+                    cell.style.textAlign = '';
+                    cell.style.padding = '';
+                });
             });
         }
 
-        // INICIALIZACIÓN
         window.onload = function() {
             loadDatabase();
-            initCurrentWeek();
         };
     </script>
 </body>
