@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welchez Café - Sistema de Pedidos Profesional v4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
     <style>
         :root { --primary: #5d4037; --accent: #d1e9f6; --text: #333; }
         body { font-family: 'Helvetica', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; color: var(--text); }
@@ -32,8 +27,6 @@
         .btn-special { background: #f39c12; color: white; }
         .btn-pdf { background: var(--primary); color: white; }
         .btn-jpg { background: #2980b9; color: white; }
-        .btn-enviar-cp { background: #27ae60; color: white; font-size: 14px; padding: 12px 25px; box-shadow: 0 4px 10px rgba(39,174,96,0.3); border-radius: 6px; }
-        .btn-enviar-cp:hover { background: #219150; }
         #inventory-modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:25px; box-shadow:0 0 50px rgba(0,0,0,0.5); z-index:1000; width:90%; max-width:500px; border-radius:8px; }
         .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; }
         @media print { .no-print-zone, .btn-remove, .action-btns, .overlay, #inventory-modal { display: none !important; } body { background: white; padding: 0; } .container { box-shadow: none; border: none; width: 100%; padding: 10px; } }
@@ -146,7 +139,7 @@
     </div>
 
     <div style="margin-top: 40px;">
-        <p><strong>PEDIDO REALIZADO POR:</strong> <input type="text" id="solicitante-input" placeholder="Nombre de quien solicita" style="border:none; border-bottom: 1px solid #000; width: 300px; font-weight: bold;" autocomplete="off"></p>
+        <p><strong>PEDIDO REALIZADO POR:</strong> <input type="text" style="border:none; border-bottom: 1px solid #000; width: 300px; font-weight: bold;" autocomplete="off"></p>
     </div>
 
     <div class="signatures">
@@ -155,28 +148,12 @@
     </div>
 </div>
 
-<div class="action-btns" style="text-align: center; margin-top: 30px; padding-bottom: 50px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-    <button class="btn btn-enviar-cp" onclick="enviarPedidoFirebase()">🚀 ENVIAR PEDIDO A PRODUCCIÓN</button>
+<div class="action-btns" style="text-align: center; margin-top: 30px; padding-bottom: 50px;">
     <button class="btn btn-pdf" onclick="window.print()">DESCARGAR PDF</button>
     <button class="btn btn-jpg" onclick="downloadJPG()">DESCARGAR JPG</button>
 </div>
 
 <script>
-    // ===== CONFIGURACIÓN FIREBASE =====
-    const firebaseConfig = {
-        apiKey: "AIzaSyDKLFmev_uekLNNzPmwqH0KLJ4729CPAqI",
-        authDomain: "welchez-pedidos.firebaseapp.com",
-        projectId: "welchez-pedidos",
-        storageBucket: "welchez-pedidos.firebasestorage.app",
-        messagingSenderId: "6626024169",
-        appId: "1:6626024169:web:dc511a2104656c40db2e78",
-        measurementId: "G-LBRWTHM1ZW"
-    };
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-
     let data = {
         "COCINA": [
             {n:"POLLO P/CHILAQUILES EN PORCIONES CP", u:"LBS"}, {n:"PROSHUTTO EN PORCIONES CP", u:"LBS"}, {n:"ADEREZO AGUACATE", u:"LBS"},
@@ -242,7 +219,7 @@
     function updateItems() {
         const dep = document.getElementById('dep-select').value;
         const dl = document.getElementById('prods');
-        dl.innerHTML = "";
+        dl.innerHTML = ""; // Limpieza total del buscador antes de cargar
         if(dep && data[dep]) {
             data[dep].forEach(item => {
                 let opt = document.createElement('option');
@@ -325,7 +302,7 @@
         if(confirm("¿Eliminar este producto de la lista?")) {
             const dep = document.getElementById('dep-select').value;
             data[dep].splice(index, 1);
-            updateItems();
+            updateItems(); // Esto limpia el buscador inmediatamente
             renderManageList();
         }
     }
@@ -369,83 +346,6 @@
             o.value = n; o.text = n;
             s.add(o); s.value = n;
         }
-    }
-
-    // ===== FUNCIÓN DE ENVÍO DE PEDIDO A PRODUCCIÓN =====
-    function enviarPedidoFirebase() {
-        const sucursal = document.getElementById('suc-select').value;
-        const solicitanteInput = document.getElementById('solicitante-input');
-        const solicitante = solicitanteInput ? solicitanteInput.value.trim() : "";
-        const rows = document.querySelectorAll('#table-body tr');
-
-        if (rows.length === 0) {
-            alert("⚠️ Agrega al menos un producto a la lista antes de enviar.");
-            return;
-        }
-
-        const items = [];
-        rows.forEach(row => {
-            const desc = row.children[1] ? row.children[1].innerText.trim() : "";
-            const um = row.children[2] ? row.children[2].innerText.trim() : "UND";
-            const existenciaInput = row.children[3] ? row.children[3].querySelector('input') : null;
-            const pedirInput = row.children[4] ? row.children[4].querySelector('input') : null;
-
-            const existencia = existenciaInput ? existenciaInput.value.trim() : "";
-            const cantidadPedida = pedirInput && pedirInput.value ? parseFloat(pedirInput.value) : 0;
-
-            if (cantidadPedida > 0) {
-                items.push({
-                    descripcion: desc,
-                    um: um,
-                    existencia: existencia,
-                    cantidadPedida: cantidadPedida,
-                    cantidadEnviar: cantidadPedida,
-                    observaciones: ""
-                });
-            }
-        });
-
-        if (items.length === 0) {
-            alert("⚠️ Por favor escribe la cantidad en la columna 'PEDIR' para los productos que deseas solicitar.");
-            return;
-        }
-
-        const esEspecial = document.getElementById('input-special-panel').style.display === 'block';
-        const clienteEsp = document.getElementById('esp-cliente').value;
-        const fechaEntEsp = document.getElementById('esp-fecha-evento').value;
-        const obsEsp = document.getElementById('esp-obs').value;
-        const fechaHoy = document.getElementById('view-date').innerText || new Date().toLocaleDateString('es-HN');
-
-        const nuevoPedido = {
-            sucursal: sucursal,
-            fecha: fechaHoy,
-            hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            solicitante: solicitante || ("Sucursal " + sucursal),
-            responsableCP: "Grevil Benitez",
-            estado: "PENDIENTE",
-            esEspecial: esEspecial,
-            clienteEspecial: esEspecial ? clienteEsp : "",
-            fechaEntregaEspecial: esEspecial ? fechaEntEsp : "",
-            observacionesGenerales: esEspecial ? obsEsp : "",
-            items: items,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        const btn = event.target;
-        btn.disabled = true;
-        const textoOriginal = btn.innerHTML;
-        btn.innerHTML = "⏳ Enviando a Producción...";
-
-        db.collection("pedidos_cp").add(nuevoPedido).then(() => {
-            alert("✅ ¡PEDIDO ENVIADO CON ÉXITO AL CENTRO DE PRODUCCIÓN!\n\nYa está guardado en la base de datos.");
-            btn.disabled = false;
-            btn.innerHTML = textoOriginal;
-        }).catch(err => {
-            console.error("Error al enviar pedido:", err);
-            alert("❌ Ocurrió un error al enviar: " + err.message);
-            btn.disabled = false;
-            btn.innerHTML = textoOriginal;
-        });
     }
 </script>
 
